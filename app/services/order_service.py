@@ -33,7 +33,7 @@ async def get_order(order_id: str):
 
 
 # 建立訂單（含檢查飯店、房型、是否重複）
-async def create_order(data: Dict, user: User):
+async def create_order(data: Dict, current_user: User):
     hotel_id = data.get("hotelId")
     room_id = data.get("roomId")
     total_price = data.get("totalPrice")
@@ -45,7 +45,7 @@ async def create_order(data: Dict, user: User):
     existing = await Order.find({
         "hotelId": hotel_id,
         "roomId": room_id,
-        "userId": str(user.id),
+        "userId": str(current_user["id"]),
         "status": {"$ne": "completed"}
     }).to_list()
 
@@ -62,15 +62,15 @@ async def create_order(data: Dict, user: User):
 
     service_fee = total_price * 0.10
     total_price_with_fee = total_price + service_fee
-
+    data.pop("totalPrice", None)
     order = Order(
         **data,
-        userId=str(user.id),
+        userId=str(current_user["id"]),
         totalPrice=total_price_with_fee,
         createdAt=datetime.now(timezone.utc)
     )
     await order.insert()
-    return success(data=order, code=201)
+    return success(data=order, status=201)
 
 
 

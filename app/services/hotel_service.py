@@ -17,15 +17,17 @@ async def get_all_hotels():
 
 
 # 模糊搜尋飯店名稱(搜索框)    
-async def get_hotel_name_suggestions(name: str):
-    if not name.strip():
+async def get_hotel_name_suggestions(name: Optional[str] = None):
+    if not name or not name.strip():
         raise_error(400, "請輸入搜尋名稱")
 
-    hotels = await Hotel.find({
-        "name": {"$regex": name, "$options": "i"}
-    }, projection={"_id": 1, "name": 1}).limit(10).to_list()
+    hotels = await Hotel.find(
+        {"name": {"$regex": name, "$options": "i"}}
+    ).limit(10).to_list()
 
-    return success(data=hotels)
+    result = [{"_id": str(h.id), "name": h.name} for h in hotels]
+
+    return success(data=result)
 
 # 查詢熱門飯店
 async def get_popular_hotels():
@@ -74,9 +76,6 @@ async def list_hotels(
         query["_id"] = ObjectId(hotel_id)
     if popular:
         query["popularHotel"] = True
-
-    print("🟡 hotel_id 傳入參數 =", hotel_id)
-    print("🟡 query =", query)
     try:
         # 單查 hotel，不用房型與價格
         is_single_query = (
@@ -86,7 +85,9 @@ async def list_hotels(
             hotel = await Hotel.get(ObjectId(hotel_id))
             if not hotel:
                 raise_error(404, "找不到此飯店")
-            return success(data=hotel)
+            hotel_data = hotel.model_dump(by_alias=True, exclude_none=True, exclude={"rooms"})
+            hotel_data["availableRooms"] = []
+            return success(data=[hotel_data])
         
         # 多查 hotel，需帶房型與價格
         hotels = await Hotel.find(query).to_list()
@@ -108,11 +109,11 @@ async def list_hotels(
             available_rooms = []
 
             for idx, room in enumerate(rooms):
-                print(f"➡️ 房型[{idx}]：{room.title}")
-                print(f"   🧩 start_date={start_date}, end_date={end_date}")
+                print(f"房型[{idx}]：{room.title}")
+                print(f"start_date={start_date}, end_date={end_date}")
 
                 price = room.calculate_total_price(start_date, end_date)
-                print(f"   🧮 計算結果：{price}")
+                print(f"計算結果：{price}")
 
                 if not price or price <= 0:
                     continue
@@ -133,7 +134,7 @@ async def list_hotels(
                     hotel.cheapest_price = cheapest_price
                     await hotel.save()
                 except Exception as e:
-                    print(f"⚠️ 更新 hotel.cheapest_price 失敗: {e}")
+                    print(f"hotel.cheapest_price 失敗: {e}")
 
             hotel_data = hotel.model_dump(by_alias=True, exclude_none=True, exclude={"rooms"})
             hotel_data["availableRooms"] = available_rooms
@@ -152,8 +153,8 @@ async def list_hotels(
 
     except Exception as e:
         import traceback
-        print(f"例外型別: {type(e)}")
-        print(f"例外內容: {e}")
+        print(f"list_hotels 例外型別: {type(e)}")
+        print(f"list_hotels 例外內容: {e}")
         print(traceback.format_exc())
         safe_data = []
 
