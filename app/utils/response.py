@@ -1,4 +1,5 @@
 import json
+import os
 from bson import ObjectId, DBRef
 from beanie import PydanticObjectId
 from pydantic import BaseModel
@@ -117,13 +118,24 @@ def success(
 
     if cookies:
         for k, v in cookies.items():
-            resp.set_cookie(
-                key=k,
-                value=v,
-                httponly=True,
-                secure=False,
-                samesite="lax",
-                max_age=7 * 24 * 60 * 60,
-                path="/"
-            )
+            if isinstance(v, dict):
+                resp.set_cookie(
+                    key=k,
+                    value=v.get("value", ""),
+                    httponly=v.get("httponly", True),
+                    secure=v.get("secure", os.getenv("NODE_ENV") == "production"),
+                    samesite=v.get("samesite", "lax"),
+                    max_age=v.get("max_age", 7 * 24 * 60 * 60),
+                    path=v.get("path", "/")
+                )
+            else:
+                resp.set_cookie(
+                    key=k,
+                    value=v,
+                    httponly=True,
+                    secure=os.getenv("NODE_ENV") == "production",
+                    samesite="lax",
+                    max_age=7 * 24 * 60 * 60,
+                    path="/"
+                )
     return resp

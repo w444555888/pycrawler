@@ -13,22 +13,24 @@ JWT_SECRET = os.getenv("JWT", "w444")
 JWT_EXPIRE_HOURS = 168  # 對應 Node 7d = 168hr
 
 # 發 token 並設 cookie
-def set_token_cookie(response: Response, token: str):
-    response.set_cookie(
-        key="JWT_token",
-        value=token,
-        httponly=False,
-        secure=os.getenv("NODE_ENV") == "production",
-        samesite="strict" if os.getenv("NODE_ENV") == "production" else "lax",
-        max_age=7 * 24 * 60 * 60,
-        path="/"
-    )
+def set_token_cookie(token: str, max_age=7 * 24 * 60 * 60):
+    return {
+        "JWT_token": {
+            "value": token,
+            "httponly": True,
+            "secure": os.getenv("NODE_ENV") == "production",
+            "samesite": "lax",
+            "max_age": max_age,
+            "path": "/"
+        }
+    }
+
 
 def generate_token(user):
     payload = {
         "id": str(user.id),
         "isAdmin": getattr(user, "is_admin", False),
-        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRE_HOURS)
+        "exp": datetime.now(timezone.utc) + timedelta(days=7)
     }
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
@@ -61,11 +63,11 @@ async def login(data: dict, response: Response):
         raise_error(404, "輸入密碼錯誤")
     
     token = generate_token(user)
-    set_token_cookie(response, token)
+    cookie = set_token_cookie(token)
 
     return success(
         data={"userDetails": user},
-        cookies={"JWT_token": token},
+        cookies=cookie,
         exclude_fields=["password"]
     )
 
