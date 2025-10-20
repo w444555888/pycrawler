@@ -355,6 +355,7 @@ async def create_flight_order(data: dict, user_id: str):
         }
     )
     await order.insert()
+    return success(201, "新增機票訂單成功")
 
 
 
@@ -377,29 +378,29 @@ async def get_order_detail(order_id: str):
 
 
 # 取消訂單
-async def cancel_order(order_id: str, user_id: str):
+async def cancel_order(order_id: str, user_id: str, is_admin: bool = False):
     order = await FlightOrder.get(order_id)
     if not order:
         raise_error(404, "找不到該訂單")
 
-    if order.userId != user_id:
+    if not is_admin and order.user_id != user_id:
         raise_error(403, "無權限取消此訂單")
 
     if order.status != "PENDING":
         raise_error(400, "只能取消待付款的訂單")
 
-    flight = await Flight.get(order.flightId)
+    flight = await Flight.get(order.flight_id)
     if not flight:
         raise_error(404, "找不到相關航班")
 
-    schedule = next((s for s in flight.schedules if str(s["_id"]) == order.scheduleId), None)
+    schedule = next((s for s in flight.schedules if str(s.id) == str(order.schedule_id)), None)
     if not schedule:
         raise_error(404, "找不到對應航班班次")
 
     order.status = "CANCELLED"
     await order.save()
 
-    schedule["availableSeats"][order.category] += len(order.passengerInfo)
+    schedule.available_seats[order.category] += len(order.passenger_info)
     await flight.save()
 
     return success(data=order)

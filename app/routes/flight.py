@@ -38,7 +38,7 @@ async def route_get_order_detail_by_id(order_id: str):
 
 @router.post("/orders/{order_id}/cancel")
 async def route_cancel_order_by_id(order_id: str, current_user=Depends(verify_token)):
-    return await cancel_order(order_id, current_user["id"])
+    return await cancel_order(order_id, current_user["id"], current_user.get("isAdmin", False))
 
 
 
