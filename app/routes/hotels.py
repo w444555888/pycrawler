@@ -46,7 +46,7 @@ async def get_hotel(id: str):
     return await hotel_service.get_hotel(id)
 
 #創建資料
-@router.post("/")
+@router.post("")
 async def add_hotel(data: dict):
     return await hotel_service.create_hotel(data)
 

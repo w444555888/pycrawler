@@ -11,7 +11,7 @@ from app.services.order_service import (
 router = APIRouter(tags=["orders"])
 
 #全部訂單
-@router.get("/")
+@router.get("")
 async def route_list_orders():
     return await list_orders()
 
@@ -21,7 +21,7 @@ async def route_get_order(order_id: str):
     return await get_order(order_id)
 
 #新訂單
-@router.post("/")
+@router.post("")
 async def route_create_order(data: dict, current_user=Depends(verify_token)):
     return await create_order(data, current_user)
 
