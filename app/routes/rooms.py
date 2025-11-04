@@ -5,7 +5,8 @@ from app.services.room_service import (
     list_rooms_by_hotel,  
     create_room,           
     update_room,           
-    delete_room            
+    delete_room,
+    update_room_inventory          
 )
 
 router = APIRouter(tags=["rooms"])
@@ -29,6 +30,13 @@ async def route_list_rooms_by_hotel(hotel_id: str):
 @router.post("")
 async def route_create_room(data: dict):
     return await create_room(data)
+
+
+# 批次更新房間庫存（等同 Node.js: PUT /updateRoomInventory）
+@router.put("/updateRoomInventory")
+async def route_update_room_inventory(payload: dict):
+    return await update_room_inventory(payload)
+
 
 # 編輯特定房型資料（根據 room_id）
 @router.put("/{room_id}")

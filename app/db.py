@@ -8,6 +8,7 @@ from app.models.room import Room
 from app.models.order import Order
 from app.models.flight import Flight
 from app.models.flight_order import FlightOrder
+from app.models.room_inventory import RoomInventory
 
 
 async def init_db():
@@ -17,5 +18,5 @@ async def init_db():
     # 初始化 Beanie ODM，註冊所有模型
     await init_beanie(
         database=db,
-        document_models=[User, Hotel, Room, Order, Flight, FlightOrder]
+        document_models=[User, Hotel, Room, Order, Flight, FlightOrder, RoomInventory]
     )
