@@ -1,6 +1,7 @@
 from typing import Optional
 from beanie import PydanticObjectId
 from bson import ObjectId
+from datetime import datetime, timezone
 from app.models.room_inventory import RoomInventory
 from app.models.room import Room
 from app.models.hotel import Hotel
@@ -131,30 +132,36 @@ async def update_room_inventory(payload: dict):
 
     for item in updates:
         room_id = item.get("roomId")
-        date = item.get("date")
+        date_str = item.get("date")
         total_rooms = item.get("totalRooms")
 
-        if not room_id or not date:
+        if not room_id or not date_str:
+            continue
+
+        try:
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            print(f"日期格式錯誤: {date_str}")
             continue
 
         existing = await RoomInventory.find_one(
             RoomInventory.room_id == ObjectId(room_id),
-            RoomInventory.date == date
+            RoomInventory.date == date_obj
         )
 
         if existing:
             existing.total_rooms = total_rooms
             existing.update_timestamp()
             await existing.save()
-            print(f"🟡 更新現有庫存: roomId={room_id}, date={date}, totalRooms={total_rooms}")
+            print(f"更新現有庫存: roomId={room_id}, date={date_obj}, totalRooms={total_rooms}")
         else:
             new_inv = RoomInventory(
                 room_id=ObjectId(room_id),
-                date=date,
+                date=date_obj,
                 total_rooms=total_rooms
             )
             await new_inv.insert()
-            print(f"🟢 新增庫存: roomId={room_id}, date={date}, totalRooms={total_rooms}")
+            print(f"新增庫存: roomId={room_id}, date={date_obj}, totalRooms={total_rooms}")
 
     return success(message="房間庫存更新成功")
 

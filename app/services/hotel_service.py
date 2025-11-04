@@ -1,12 +1,13 @@
 from app.utils.response import success
-from app.models.hotel import Hotel
+from app.models.room_inventory import RoomInventory
 from app.models.room import Room
+from app.models.hotel import Hotel
 from app.utils.error_handler import raise_error
 from typing import Optional
-from beanie import PydanticObjectId, Link
+from beanie import PydanticObjectId
 from pydantic import BaseModel
 from bson import DBRef, ObjectId
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 
 
 
@@ -118,6 +119,28 @@ async def list_hotels(
                 if not price or price <= 0:
                     continue
 
+                # 計算房間庫存篩選
+                inventory_query = {"roomId": ObjectId(room.id)}
+                if start_date and end_date:
+                    try:
+                        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+                        end = datetime.strptime(end_date, "%Y-%m-%d").date() - timedelta(days=1)
+                        # 日期用 date 物件，不用字串
+                        inventory_query["date"] = {"$gte": start, "$lte": end}
+                    except Exception as e:
+                        print(f"計算房間庫存篩選日期解析錯誤: {e}")
+
+                inventories = await RoomInventory.find(inventory_query).sort("date").to_list()
+                inventory_data = [
+                    {
+                        "date": str(inv.date),
+                        "totalRooms": inv.total_rooms or 0,
+                        "bookedRooms": inv.booked_rooms or 0,
+                        "remainingRooms": inv.remaining_rooms,
+                    }
+                    for inv in inventories
+                ]
+
                 if cheapest_price is None or price < cheapest_price:
                     cheapest_price = price
 
@@ -126,6 +149,7 @@ async def list_hotels(
                     getattr(room, "hotelId", getattr(room, "hotel_id", current_hotel_id))
                 )
                 room_data["roomTotalPrice"] = price
+                room_data["inventory"] = inventory_data
                 available_rooms.append(room_data)
 
             # --- 更新最低價 ---
@@ -134,7 +158,7 @@ async def list_hotels(
                     hotel.cheapest_price = cheapest_price
                     await hotel.save()
                 except Exception as e:
-                    print(f"hotel.cheapest_price 失敗: {e}")
+                    print(f"更新最低價失敗: {e}")
 
             hotel_data = hotel.model_dump(by_alias=True, exclude_none=True, exclude={"rooms"})
             hotel_data["availableRooms"] = available_rooms
