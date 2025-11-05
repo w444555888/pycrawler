@@ -10,7 +10,6 @@ from bson import DBRef, ObjectId
 from datetime import datetime, timedelta
 
 
-
 # 獲取所有飯店資料（不帶任何過濾條件）
 async def get_all_hotels():
     hotels = await Hotel.find_all().to_list()
@@ -30,10 +29,13 @@ async def get_hotel_name_suggestions(name: Optional[str] = None):
 
     return success(data=result)
 
+
+
 # 查詢熱門飯店
 async def get_popular_hotels():
     hotels = await Hotel.find({"popularHotel": True}).to_list()
     return success(data=hotels)   
+
 
 
 # 遞迴清理函式 — 取代 jsonable_encoder，防止 DBRef 錯誤

@@ -12,7 +12,8 @@ import secrets
 JWT_SECRET = os.getenv("JWT", "w444")
 JWT_EXPIRE_HOURS = 168  # 對應 Node 7d = 168hr
 
-# 發 token 並設 cookie
+
+# 設定 JWT Cookie
 def set_token_cookie(token: str, max_age=7 * 24 * 60 * 60):
     return {
         "JWT_token": {
@@ -26,7 +27,12 @@ def set_token_cookie(token: str, max_age=7 * 24 * 60 * 60):
     }
 
 
+# JWT 結構：
+# Header	使用的演算法 (HS256)
+# Payload	你設定的資料（id, isAdmin, exp）
+# Signature	用密鑰簽名的驗證碼
 def generate_token(user):
+    # 要轉化為字串，因為 ObjectId 不是 JSON 可序列化的類型
     payload = {
         "id": str(user.id),
         "isAdmin": getattr(user, "is_admin", False),
@@ -36,9 +42,14 @@ def generate_token(user):
 
 
 async def register(data: dict):
-    username_exists = await User.find_one(User.username == data["username"])
-    email_exists = await User.find_one(User.email == data["email"])
-    if username_exists or email_exists:
+    exists = await User.find_one({
+        "$or": [
+            {"username": data["username"]},
+            {"email": data["email"]}
+        ]
+    })
+
+    if exists:
         raise_error(400, "此帳號或信箱已被註冊")
     
     hashed_pwd = bcrypt.hash(data["password"])
@@ -48,7 +59,7 @@ async def register(data: dict):
 
 
 
-async def login(data: dict, response: Response):
+async def login(data: dict):
     user = await User.find_one({
         "$or": [
             {"username": data["account"]},

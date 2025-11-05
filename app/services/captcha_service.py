@@ -29,7 +29,7 @@ def check(data: dict):
     user_x = data.get("userX")
 
     if not token or user_x is None:
-        raise_error(400, "請提供 token 與 x")
+        raise_error(400, "請提供 Token 與 x")
 
     try:
         decoded = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])

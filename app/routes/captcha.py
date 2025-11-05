@@ -10,4 +10,4 @@ async def route_init():
 
 @router.post("/verifyCaptcha")
 async def route_check(data: dict = Body(...)):
-    return captcha_service.check(data)
+    return captcha_service.check(data) 
