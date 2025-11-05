@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 # 獲取所有飯店資料（不帶任何過濾條件）
 async def get_all_hotels():
     hotels = await Hotel.find_all().to_list()
-    return success(data=hotels)
+    return success(data=hotels, exclude_fields=["cheapestPrice"])
 
 
 # 模糊搜尋飯店名稱(搜索框)    
@@ -22,6 +22,7 @@ async def get_hotel_name_suggestions(name: Optional[str] = None):
         raise_error(400, "請輸入搜尋名稱")
 
     hotels = await Hotel.find(
+        # i=ignore case（不分大小寫）
         {"name": {"$regex": name, "$options": "i"}}
     ).limit(10).to_list()
 
@@ -38,7 +39,7 @@ async def get_popular_hotels():
 
 
 
-# 遞迴清理函式 — 取代 jsonable_encoder，防止 DBRef 錯誤
+# 資料層清理器(遞迴清理) — 取代 jsonable_encoder，防止 DBRef 錯誤
 def clean_for_json(obj):
     """安全遞迴轉換所有資料，避免 DBRef / ObjectId / BaseModel 造成 JSON 錯誤"""
     if isinstance(obj, DBRef):
@@ -127,7 +128,7 @@ async def list_hotels(
                     try:
                         start = datetime.strptime(start_date, "%Y-%m-%d").date()
                         end = datetime.strptime(end_date, "%Y-%m-%d").date() - timedelta(days=1)
-                        # 日期用 date 物件，不用字串
+                        # $gte = 大於等於，$lte = 小於等於
                         inventory_query["date"] = {"$gte": start, "$lte": end}
                     except Exception as e:
                         print(f"計算房間庫存篩選日期解析錯誤: {e}")
