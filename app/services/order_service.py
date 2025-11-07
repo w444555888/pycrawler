@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from datetime import datetime, timezone, timedelta
-from beanie import PydanticObjectId
+from beanie import PydanticObjectId, Link
 from bson import ObjectId
 from datetime import datetime, timezone
 from app.models.room_inventory import RoomInventory
@@ -14,10 +14,49 @@ from typing import Dict, Optional, List
 # 服務費率
 SERVICE_FEE_RATE = 0.10
 
+
 # 取得全部訂單
 async def list_orders():
     orders = await Order.find_all().to_list()
-    return success(data=orders)
+    result = []
+
+    for o in orders:
+        hotel_id = ""
+        hotel_name = ""
+        room_id = ""
+        room_title = ""
+
+        if isinstance(o.hotel_id, Link):
+            hotel_id = str(o.hotel_id.ref.id)
+        else:
+            hotel_id = str(o.hotel_id)
+
+        if hotel_id:
+            hotel = await Hotel.get(hotel_id)
+            if hotel:
+                hotel_name = hotel.name
+
+        if isinstance(o.room_id, Link):
+            room_id = str(o.room_id.ref.id)
+        else:
+            room_id = str(o.room_id)
+
+        if room_id:
+            room = await Room.get(room_id)
+            if room:
+                room_title = room.title
+
+        data = o.model_dump(by_alias=True, exclude_none=True)
+        data["userId"] = str(o.user_id)
+        data["hotelId"] = hotel_id
+        data["hotelName"] = hotel_name
+        data["roomId"] = room_id
+        data["roomTitle"] = room_title
+        result.append(data)
+
+    return success(data=result)
+
+
 
 
 
