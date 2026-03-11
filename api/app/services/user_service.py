@@ -1,6 +1,6 @@
 from app.models.user import User
 from app.models.order import Order
-from app.models.flight_order import FlightOrder
+from app.models.real_flight_orders import RealFlightOrders
 from app.utils.response import success
 from app.utils.error_handler import raise_error
 from passlib.hash import bcrypt
@@ -23,7 +23,7 @@ async def get_user(user_id: str, current_user: User):
     all_order = await Order.find(Order.user_id == user_oid).to_list()
 
     #  航班訂單
-    raw_flight_orders = await FlightOrder.find(FlightOrder.user_id == user_oid).to_list()
+    raw_flight_orders = await RealFlightOrders.find(RealFlightOrders.user_id == user_oid).to_list()
     all_flight_order = []
     for order in raw_flight_orders:
         order_data = order.model_dump(by_alias=True, exclude_none=True)

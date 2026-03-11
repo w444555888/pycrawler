@@ -6,48 +6,96 @@ from typing import Dict, Optional, List
 import uuid
 
 from app.services.amadeus_service import AmadeusService
-from app.models.flight_order import FlightOrder
+from app.models.real_flight_orders import RealFlightOrders
 from app.utils.response import success
 from app.utils.error_handler import raise_error
 
 amadeus = AmadeusService()
 
 
+async def search_locations(keyword: str):
+    """
+    搜尋機場和地點 (模糊搜尋)
+    
+    用於協助用戶選擇出發地和目的地
+    支援機場代碼、城市名稱等搜尋
+    
+    參數:
+        keyword: 搜尋關鍵詞 (例: "LAX", "Los Angeles", "紐約")
+    
+    返回:
+        {
+            "data": [
+                {
+                    "iataCode": "LAX",
+                    "name": "Los Angeles",
+                    "type": "AIRPORT",
+                    "country": "US",
+                    "countryName": "United States"
+                }
+            ]
+        }
+    """
+    try:
+        if not keyword or len(keyword.strip()) < 2:
+            raise_error(400, "搜尋關鍵詞至少需要 2 個字符")
+        
+        result = await amadeus.search_locations(keyword.strip())
+        
+        if "error" in result:
+            raise_error(400, f"搜尋失敗: {result['error']}")
+        
+        return success(data=result.get("location_results", []))
+    
+    except Exception as e:
+        raise_error(400, f"搜尋地點失敗: {str(e)}")
+
+
 def convert_amadeus_to_flight_info(amadeus_flight: Dict) -> Dict:
     """
     將 Amadeus API 返回的飛行數據轉換為 FlightInfo 格式
     
-    Amadeus 格式:
+    改進後的格式包含中文鍵名:
     {
-        "itineraries": [{
-            "segments": [{
-                "carrierCode": "AA",
-                "number": "123",
-                "departure": {"at": "2024-03-11T10:00:00", "iataCode": "LAX"},
-                "arrival": {"at": "2024-03-11T14:00:00", "iataCode": "JFK"}
+        "航班ID (flight id)": "...",
+        "行程 (itineraries)": [{
+            "行程總時間 (duration)": "PT10H30M",
+            "航段 (segments)": [{
+                "航空公司代碼 (carrierCode)": "AA",
+                "航班號碼 (number)": "123",
+                "飛機型號 (aircraft)": {"code": "B777"},
+                "航段時間 (duration)": "PT5H30M",
+                "出發地 (departure)": {"at": "2024-03-11T10:00:00", "iataCode": "LAX"},
+                "目的地 (arrival)": {"at": "2024-03-11T14:00:00", "iataCode": "JFK"}
             }]
         }],
-        "price": {"total": "299.99"}
+        "可訂座位數 (numberOfBookableSeats)": 5,
+        "價格資訊 (price)": {"total": "299.99"}
     }
     
     返回 FlightInfo 格式:
     {
+        "flightId": "...",
         "flightNumber": "AA123",
         "airline": "American Airlines",
         "departureAirport": "LAX",
         "arrivalAirport": "JFK",
         "departureTime": datetime,
-        "arrivalTime": datetime
+        "arrivalTime": datetime,
+        "aircraftCode": "B777",
+        "itineraryDuration": "PT10H30M",
+        "availableSeats": 5
     }
     """
     try:
-        segment = amadeus_flight["itineraries"][0]["segments"][0]
+        segment = amadeus_flight["行程 (itineraries)"][0]["航段 (segments)"][0]
+        itinerary = amadeus_flight["行程 (itineraries)"][0]
         
         # 解析時間
-        departure_time = datetime.fromisoformat(segment["departure"]["at"].replace("Z", "+00:00"))
-        arrival_time = datetime.fromisoformat(segment["arrival"]["at"].replace("Z", "+00:00"))
+        departure_time = datetime.fromisoformat(segment["出發地 (departure)"]["at"].replace("Z", "+00:00"))
+        arrival_time = datetime.fromisoformat(segment["目的地 (arrival)"]["at"].replace("Z", "+00:00"))
         
-        flight_number = segment["carrierCode"] + segment["number"]
+        flight_number = segment["航空公司代碼 (carrierCode)"] + segment["航班號碼 (number)"]
         
         # 航空公司名稱對應表 (可根據實際情況擴展)
         airline_names = {
@@ -61,33 +109,52 @@ def convert_amadeus_to_flight_info(amadeus_flight: Dict) -> Dict:
             "KL": "KLM"
         }
         
-        airline = airline_names.get(segment["carrierCode"], segment["carrierCode"])
+        airline = airline_names.get(segment["航空公司代碼 (carrierCode)"], segment["航空公司代碼 (carrierCode)"])
+        
+        # 提取飛機型號
+        aircraft_code = None
+        if "飛機型號 (aircraft)" in segment:
+            aircraft_code = segment["飛機型號 (aircraft)"].get("code")
         
         return {
+            "flightId": amadeus_flight.get("航班ID (flight id)"),
             "flightNumber": flight_number,
             "airline": airline,
-            "departureAirport": segment["departure"]["iataCode"],
-            "arrivalAirport": segment["arrival"]["iataCode"],
+            "departureAirport": segment["出發地 (departure)"]["iataCode"],
+            "arrivalAirport": segment["目的地 (arrival)"]["iataCode"],
             "departureTime": departure_time,
-            "arrivalTime": arrival_time
+            "arrivalTime": arrival_time,
+            "aircraftCode": aircraft_code,
+            "itineraryDuration": itinerary.get("行程總時間 (duration)"),
+            "availableSeats": amadeus_flight.get("可訂座位數 (numberOfBookableSeats)")
         }
     except (KeyError, ValueError) as e:
         raise_error(400, f"無法解析飛行數據: {str(e)}")
 
 
-async def search_flights(origin, destination, date):
-
-    data = await amadeus.search_flights(origin, destination, date)
+async def search_flights(origin, destination, date, returnDate=None):
+    """
+    搜尋航班
+    
+    參數:
+        origin: 出發地 IATA 代碼
+        destination: 目的地 IATA 代碼
+        date: 出發日期 (YYYY-MM-DD)
+        returnDate: 回程日期 (YYYY-MM-DD，可選，如果提供表示搜尋來回航班)
+    """
+    # 調用 Amadeus 服務搜尋航班，傳遞 returnDate
+    data = await amadeus.search_flights(origin, destination, date, returnDate)
 
     flights = []
 
-    for f in data.get("data", []):
+    for f in data.get("航班搜尋結果 (flights)", []):
         try:
             # 轉換數據格式
             flight_info = convert_amadeus_to_flight_info(f)
             
             # 提取價格資訊 (Amadeus返回總價，暫時假設沒有稅額)
-            total_price = float(f["price"]["total"])
+            price_info = f.get("價格資訊 (price)", {})
+            total_price = float(price_info.get("total", 0))
             base_price = total_price * 0.9  # 假設稅費為10%
             tax = total_price * 0.1
             
@@ -97,7 +164,8 @@ async def search_flights(origin, destination, date):
                     "basePrice": round(base_price, 2),
                     "tax": round(tax, 2),
                     "totalPrice": total_price
-                }
+                },
+                "tripType": "roundtrip" if returnDate else "oneway"
             })
         except Exception as e:
             # 忽略無法解析的飛行數據
@@ -135,7 +203,7 @@ async def create_flight_order(payload: Dict, user_id: str):
         order_number = f"FO-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
 
         # 建立訂單物件
-        flight_order = FlightOrder(
+        flight_order = RealFlightOrders(
             user_id=PydanticObjectId(user_id),
             order_number=order_number,
             flight_info=flight_info,
@@ -163,7 +231,7 @@ async def get_user_orders(user_id: str):
     """
     try:
         user_oid = PydanticObjectId(user_id)
-        orders = await FlightOrder.find(FlightOrder.user_id == user_oid).to_list()
+        orders = await RealFlightOrders.find(RealFlightOrders.user_id == user_oid).to_list()
 
         result = []
         for order in orders:
@@ -188,7 +256,7 @@ async def get_order_detail(order_id: str):
     except Exception:
         raise_error(400, "訂單 id 格式不正確")
 
-    order = await FlightOrder.get(oid)
+    order = await RealFlightOrders.get(oid)
     if not order:
         raise_error(404, "訂單找不到")
 
@@ -210,7 +278,7 @@ async def cancel_order(order_id: str, user_id: str, is_admin: bool):
     except Exception:
         raise_error(400, "id 格式不正確")
 
-    order = await FlightOrder.get(oid)
+    order = await RealFlightOrders.get(oid)
     if not order:
         raise_error(404, "訂單找不到")
 
@@ -239,7 +307,7 @@ async def get_all_flight_orders():
     取得所有飛行訂單 (管理員功能)
     """
     try:
-        orders = await FlightOrder.find_all().to_list()
+        orders = await RealFlightOrders.find_all().to_list()
 
         result = []
         for order in orders:

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, Query
+from typing import Optional
 from app.services.flight_service import (
     search_flights,
+    search_locations,
     create_flight_order,
     get_user_orders,
     get_order_detail,
@@ -12,15 +14,27 @@ from app.services.auth_service import verify_token
 router = APIRouter(tags=["flights"])
 
 
+# ----------- Search Locations -----------
+
+@router.get("/locations/search")
+async def route_search_locations(
+    keyword: str = Query(...)
+):
+    """搜尋機場和城市"""
+    return await search_locations(keyword)
+
+
 # ----------- Search Flights -----------
 
 @router.get("/search")
 async def route_search_flights(
     origin: str = Query(...),
     destination: str = Query(...),
-    date: str = Query(...)
+    date: str = Query(...),
+    returnDate: Optional[str] = Query(None)
 ):
-    return await search_flights(origin, destination, date)
+    """搜尋航班"""
+    return await search_flights(origin, destination, date, returnDate)
 
 
 # ----------- Flight Order 訂單 -----------

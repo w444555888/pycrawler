@@ -34,9 +34,10 @@ class FlightInfo(BaseModel):
     """
     Flight snapshot (從 API copy 一份)
     """
-
     model_config = ConfigDict(populate_by_name=True)
 
+    flight_id: Optional[str] = Field(None, alias="flightId")
+    
     flight_number: str = Field(..., alias="flightNumber")
 
     airline: Optional[str] = Field(None, alias="airline")
@@ -46,9 +47,15 @@ class FlightInfo(BaseModel):
 
     departure_time: datetime = Field(..., alias="departureTime")
     arrival_time: datetime = Field(..., alias="arrivalTime")
+    
+    aircraft_code: Optional[str] = Field(None, alias="aircraftCode")
+    
+    itinerary_duration: Optional[str] = Field(None, alias="itineraryDuration")
+    
+    available_seats: Optional[int] = Field(None, alias="availableSeats")
 
 
-class FlightOrder(Document):
+class RealFlightOrders(Document):
     model_config = ConfigDict(populate_by_name=True)
 
     user_id: PydanticObjectId = Field(..., alias="userId")
@@ -78,7 +85,7 @@ class FlightOrder(Document):
     )
 
     class Settings:
-        name = "flightorders"
+        name = "RealFlightOrders"
 
     def update_timestamp(self):
         self.updated_at = datetime.now(timezone.utc)

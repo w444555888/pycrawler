@@ -18,18 +18,38 @@ class AmadeusService:
         res.raise_for_status()
         return res.json()["access_token"]
 
-    async def search_flights(self, origin: str, destination: str, date: str) -> dict:
+    async def search_flights(self, origin: str, destination: str, date: str, return_date: str = None) -> dict:
+        """
+        搜尋航班
+        
+        參數:
+            origin: 出發地 IATA 代碼
+            destination: 目的地 IATA 代碼
+            date: 出發日期 (YYYY-MM-DD)
+            return_date: 回程日期 (YYYY-MM-DD，可選)
+        
+        返回: 航班搜尋結果
+        """
         token = await self.get_token()
-        async with httpx.AsyncClient() as client:
+        timeout = httpx.Timeout(30.0)
+        
+        # 構建請求參數
+        params = {
+            "originLocationCode": origin,
+            "destinationLocationCode": destination,
+            "departureDate": date,
+            "adults": 1
+        }
+        
+        # 如果提供了回程日期，添加到參數中
+        if return_date:
+            params["returnDate"] = return_date
+        
+        async with httpx.AsyncClient(timeout=timeout) as client:
             res = await client.get(
                 f"{BASE_URL}/v2/shopping/flight-offers",
                 headers={"Authorization": f"Bearer {token}"},
-                params={
-                    "originLocationCode": origin,
-                    "destinationLocationCode": destination,
-                    "departureDate": date,
-                    "adults": 1
-                }
+                params=params
             )
         res.raise_for_status()
         data = res.json()
@@ -66,3 +86,55 @@ class AmadeusService:
             result.append(flight)
 
         return {"航班搜尋結果 (flights)": result}
+
+    async def search_locations(self, keyword: str) -> dict:
+        """
+        搜尋機場和城市
+        使用 Amadeus 城市搜尋 API
+        
+        參數:
+            keyword: 搜尋關鍵詞 (機場代碼、城市名稱等)
+        
+        返回:
+            {
+                "location_results": [
+                    {
+                        "iataCode": "LAX",
+                        "name": "Los Angeles",
+                        "type": "AIRPORT",
+                        "country": "US",
+                        "countryName": "United States"
+                    }
+                ]
+            }
+        """
+        try:
+            token = await self.get_token()
+            async with httpx.AsyncClient() as client:
+                res = await client.get(
+                    f"{BASE_URL}/v1/reference-data/locations",
+                    headers={"Authorization": f"Bearer {token}"},
+                    params={
+                        "keyword": keyword,
+                        "subType": "AIRPORT,CITY",
+                        "page[limit]": 10
+                    }
+                )
+            res.raise_for_status()
+            data = res.json()
+            
+            # 整理搜尋結果
+            locations = []
+            for item in data.get("data", []):
+                location = {
+                    "iataCode": item.get("iataCode"),
+                    "name": item.get("name"),
+                    "type": item.get("type"),  # AIRPORT, CITY
+                    "country": item.get("address", {}).get("countryCode"),
+                    "countryName": item.get("address", {}).get("countryName")
+                }
+                locations.append(location)
+            
+            return {"location_results": locations}
+        except Exception as e:
+            return {"location_results": [], "error": str(e)}
