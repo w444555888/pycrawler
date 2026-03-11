@@ -24,10 +24,12 @@
       margin-bottom: 2rem;
       color: #8e8e8e;
       animation: fadeIn 0.5s ease;
+      position: relative;
   
       svg {
         opacity: 0.8;
         transition: all 0.3s ease;
+        position: relative;
   
         &:hover {
           opacity: 1;

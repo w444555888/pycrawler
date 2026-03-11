@@ -168,7 +168,7 @@ const BookingFlight = () => {
             <div className="bookingFlight">
                 <Navbar />
                 <div className="bookingContainer successContainer" ref={successRef} >
-                    <h2 ref={titleRef} style={{ fontSize: 28, color: '#4caf50' }}>
+                    <h2 ref={titleRef} className="successTitle">
                         🎉 訂票成功！
                     </h2>
                     <div ref={textRef}>

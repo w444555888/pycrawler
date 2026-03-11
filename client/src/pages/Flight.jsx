@@ -9,7 +9,6 @@ import zhTW from 'date-fns/locale/zh-TW'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { debounce } from 'lodash'
 import { request } from '../utils/apiService';
-import { getTimeZoneByCity } from '../utils/getTimeZoneByCity';
 import dayjs from '../utils/dayjs-config';
 import { toast } from 'react-toastify'
 import EmptyState from '../subcomponents/EmptyState'
@@ -181,13 +180,8 @@ const Flight = () => {
                 <div className="searchSection">
                     <div className="searchInputs">
                         {/* 來回/單程選擇 */}
-                        <div className="tripTypeSelector" style={{ 
-                            display: 'flex', 
-                            gap: '10px', 
-                            marginBottom: '15px',
-                            width: '100%'
-                        }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                        <div className="tripTypeSelector">
+                            <label className="tripTypeLabel">
                                 <input
                                     type="radio"
                                     name="tripType"
@@ -197,7 +191,7 @@ const Flight = () => {
                                 />
                                 來回
                             </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
+                            <label className="tripTypeLabel">
                                 <input
                                     type="radio"
                                     name="tripType"
@@ -209,7 +203,7 @@ const Flight = () => {
                             </label>
                         </div>
 
-                        <div className="searchItem" ref={departureContainerRef} style={{ position: 'relative' }}>
+                        <div className="searchItem" ref={departureContainerRef}>
                             <FontAwesomeIcon icon={faPlane} className="icon" />
                             <input
                                 ref={departureInputRef}
@@ -246,7 +240,7 @@ const Flight = () => {
                                 </div>
                             )}
                         </div>
-                        <div className="searchItem" ref={arrivalContainerRef} style={{ position: 'relative' }}>
+                        <div className="searchItem" ref={arrivalContainerRef}>
                             <FontAwesomeIcon icon={faPlane} className="icon" />
                             <input
                                 ref={arrivalInputRef}
@@ -303,7 +297,15 @@ const Flight = () => {
                             {openDate && (
                                 <DateRange
                                     editableDateInputs={true}
-                                    onChange={(item) => setDates([item.selection])}
+                                    onChange={(item) => {
+                                        setDates([item.selection])
+                                        // 自動收起
+                                        if (tripType === "oneway" && item.selection.startDate) {
+                                            setOpenDate(false)
+                                        } else if (tripType === "roundtrip" && item.selection.startDate && item.selection.endDate) {
+                                            setOpenDate(false)
+                                        }
+                                    }}
                                     moveRangeOnFirstSelection={tripType === "oneway"}
                                     ranges={dates}
                                     className="date"
@@ -336,7 +338,7 @@ const Flight = () => {
                                         <div className="date">
                                             出發日期：{departureTime ? departureTime.format('YYYY-MM-DD') : 'N/A'}
                                         </div>
-                                        <div className="price" style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
+                                        <div className="price">
                                             價格：${price.totalPrice || 'N/A'}
                                         </div>
                                     </div>
