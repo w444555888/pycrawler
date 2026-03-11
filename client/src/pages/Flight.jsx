@@ -161,8 +161,15 @@ const Flight = () => {
     };
 
 
-    const handleBookingFlightRouter = async (flightId) => {
-        navigate(`/bookingFlight/${flightId}?${searchParams}`);
+    const handleBookingFlightRouter = (flightData) => {
+        // 通过 navigate 的 state 传递完整的航班信息
+        navigate(`/bookingFlight`, {
+            state: {
+                flightInfo: flightData.flightInfo,
+                price: flightData.price,
+                tripType: flightData.tripType
+            }
+        });
     };
 
 
@@ -351,7 +358,7 @@ const Flight = () => {
                                     <div className="bookSection">
                                         <button
                                             className="bookButton"
-                                            onClick={() => handleBookingFlightRouter(flightInfo.flightId)}
+                                            onClick={() => handleBookingFlightRouter(flight)}
                                         >
                                             訂票
                                         </button>

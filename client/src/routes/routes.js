@@ -24,7 +24,7 @@ export const ROUTES = {
   PERSONAL: '/personal',
   ORDER: '/order/:startDate/:endDate/:hotelId/:roomId',
   FLIGHT: '/flight',
-  BOOKINGFLIGHT: '/bookingFlight/:id',
+  BOOKINGFLIGHT: '/bookingFlight',
   HOTELFLASHSALE: '/flash-sale',
   HOTELFLASHSALEDetail: '/flash-sale/:id',
 }
@@ -82,7 +82,7 @@ export const routeConfig = [
     requireAuth: true
   },
   {
-    path: ROUTES.BOOKINGFLIGHT,
+    path: '/bookingFlight',
     element: BookingFlight,
     requireAuth: true
   },

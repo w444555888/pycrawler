@@ -1,28 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import './bookingFlight.scss'
 import { zhTW } from 'date-fns/locale'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlane } from '@fortawesome/free-solid-svg-icons'
 import { request } from '../utils/apiService'
-import { getTimeZoneByCity } from '../utils/getTimeZoneByCity'
 import dayjs from '../utils/dayjs-config'
 import gsap from 'gsap';
 import { toast } from 'react-toastify'
 import Skeleton from 'react-loading-skeleton'
 
 const BookingFlight = () => {
-    const { id } = useParams()
-    const [searchParams] = useSearchParams()
+    const location = useLocation()
+    const navigate = useNavigate()
     const [loading, setLoading] = useState(false);
     const [bookingSuccess, setBookingSuccess] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);
-    const [selectedScheduleId, setSelectedScheduleId] = useState(null);
-    const [selectedDate, setSelectedDate] = useState(null);
     const [flightData, setFlightData] = useState(null);
     const [passengers, setPassengers] = useState([{ name: '', gender: '', birthDate: '', passportNumber: '', email: '' }]);
-    const [isNextDay, setIsNextDay] = useState(false);
     const successRef = useRef();
     const titleRef = useRef();
     const textRef = useRef();
@@ -53,15 +49,6 @@ const BookingFlight = () => {
     }
 
 
-    const getCabinClasses = (availableSeats, prices) => {
-        if (!availableSeats || !prices) return []
-        return Object.entries(availableSeats).map(([category, seats]) => ({
-            category,
-            availableSeats: seats,
-            basePrice: prices[category]
-        }))
-    }
-
     const handleAddPassenger = () => {
         setPassengers([...passengers, { name: '', gender: '', birthDate: '', passportNumber: '', email: '' }])
     }
@@ -88,11 +75,17 @@ const BookingFlight = () => {
             return
         }
 
+        if (!flightData || !flightData.flightInfo || !flightData.price) {
+            toast.error('航班信息不完整')
+            return
+        }
+
+        // 构建正确的订单 payload
         const result = await request('POST', '/flight/order', {
-            flightId: id,
+            flightInfo: flightData.flightInfo,
+            passengerInfo: passengers,
             category: selectedClass,
-            scheduleId: selectedScheduleId,
-            passengerInfo: passengers
+            price: flightData.price
         }, setLoading)
 
         if (result.success) {
@@ -103,27 +96,21 @@ const BookingFlight = () => {
 
 
     useEffect(() => {
-        const handleBookingFlight = async () => {
-            const result = await request('GET', `/flight/${id}?${searchParams.toString()}`, {}, setLoading)
-            if (result.success) {
-                setFlightData(result.data)
-                if (result.data.schedules.length > 0) {
-                    setSelectedDate(result.data.schedules[0].departureDate)
-                    setSelectedScheduleId(result.data.schedules[0]._id)
-                    // 計算是否為隔天（以 UTC 日期為準）
-                    const arrivalDateStr = dayjs.utc(result.data.schedules[0].arrivalDate).format('YYYY-MM-DD')
-                    const departureDateStr = dayjs.utc(result.data.schedules[0].departureDate).format('YYYY-MM-DD')
-
-                    setIsNextDay(arrivalDateStr !== departureDateStr)
-                }
-            } else toast.error(result.message)
+        if (location.state && location.state.flightInfo) {
+            setFlightData({
+                flightInfo: location.state.flightInfo,
+                price: location.state.price,
+                tripType: location.state.tripType
+            })
+            setSelectedClass('ECONOMY')
+        } else {
+            toast.error('未找到航班信息，请重新选择航班')
+            navigate('/flight')
         }
-
-        handleBookingFlight()
-    }, [id, searchParams])
+    }, [location.state, navigate])
 
 
-    // GSAP 動畫效果
+    // GSAP動畫
     useEffect(() => {
         if (bookingSuccess) {
             const tl = gsap.timeline({ defaults: { ease: 'power2.out', duration: 0.6 } });
@@ -225,48 +212,31 @@ const BookingFlight = () => {
 
                 <div className="flightDetails">
                     <div className="flightHeader">
-                        <h2>航班號：{flightData.flightNumber}</h2>
+                        <h2>航班號：{flightData?.flightInfo?.airline} {flightData?.flightInfo?.flightNumber}</h2>
                         <div className="flightDate">
-                            {selectedDate && (
-                                <div>
-                                    {dayjs.utc(selectedDate).tz(getTimeZoneByCity(flightData.route.departureCity)).format('YYYY年MM月DD日 dddd')}
-                                </div>
-                            )}
+                            <div>
+                                {flightData?.flightInfo?.departureTime && dayjs(flightData.flightInfo.departureTime).format('YYYY年MM月DD日 dddd')}
+                            </div>
                         </div>
                     </div>
 
                     <div className="routeInfo">
                         <div className="departure">
-                            <div className="city">{flightData.route.departureCity}</div>
+                            <div className="city">{flightData?.flightInfo?.departureAirport}</div>
                             <div className="time">
-                                {dayjs.utc(flightData.schedules[0].departureDate)
-                                    .tz(getTimeZoneByCity(flightData.route.departureCity))
-                                    .format('HH:mm')}
-                                <div className="timezone">
-                                    <span>
-                                        (GMT{dayjs().tz(getTimeZoneByCity(flightData.route.departureCity)).format('Z')})
-                                    </span>
-                                </div>
+                                {flightData?.flightInfo?.departureTime && dayjs(flightData.flightInfo.departureTime).format('HH:mm')}
                             </div>
                         </div>
 
                         <div className="arrow">
-                            {Math.floor(flightData.route.flightDuration / 60)}小時
-                            {flightData.route.flightDuration % 60}分 <FontAwesomeIcon icon={faPlane} />
+                            {flightData?.flightInfo?.itineraryDuration}
+                            <FontAwesomeIcon icon={faPlane} />
                         </div>
 
                         <div className="arrival">
-                            <div className="city">{flightData.route.arrivalCity}</div>
+                            <div className="city">{flightData?.flightInfo?.arrivalAirport}</div>
                             <div className="time">
-                                {dayjs.utc(flightData.schedules[0].arrivalDate)
-                                    .tz(getTimeZoneByCity(flightData.route.arrivalCity))
-                                    .format('HH:mm')}
-
-                                {isNextDay && <span className="nextDay">+1</span>}
-
-                                <div className="timezone">
-                                    <span> (GMT{dayjs().tz(getTimeZoneByCity(flightData.route.arrivalCity)).format('Z')})</span>
-                                </div>
+                                {flightData?.flightInfo?.arrivalTime && dayjs(flightData.flightInfo.arrivalTime).format('HH:mm')}
                             </div>
                         </div>
                     </div>
@@ -277,37 +247,44 @@ const BookingFlight = () => {
                             請選擇您想要的艙等，每個艙等都提供不同的服務與特權
                         </div>
                         <div className="cabinOptions">
-                            {flightData && flightData.schedules[0] &&
-                                getCabinClasses(
-                                    flightData.schedules[0].availableSeats,
-                                    flightData.schedules[0].prices
-                                ).map((cabin) => (
+                            {['ECONOMY', 'BUSINESS', 'FIRST'].map((category) => {
+                                // 根據艙等計算價格倍數
+                                const priceMultiplier = {
+                                    'ECONOMY': 1,
+                                    'BUSINESS': 1.5,
+                                    'FIRST': 2
+                                };
+                                const basePrice = flightData?.price?.basePrice || 0;
+                                const cabin_price = (basePrice * (priceMultiplier[category] || 1)).toFixed(2);
+
+                                return (
                                     <div
-                                        key={cabin.category}
-                                        className={`cabinOption ${selectedClass === cabin.category ? 'selected' : ''}`}
-                                        onClick={() => setSelectedClass(cabin.category)}
+                                        key={category}
+                                        className={`cabinOption ${selectedClass === category ? 'selected' : ''}`}
+                                        onClick={() => setSelectedClass(category)}
                                     >
                                         <div className="cabinHeader">
-                                            <div className="cabinType">{cabinTypeMap[cabin.category]}</div>
-                                            <div className="price">${cabin.basePrice}</div>
+                                            <div className="cabinType">{cabinTypeMap[category]}</div>
+                                            <div className="price">${cabin_price}</div>
                                         </div>
                                         <div className="cabinDetails">
-                                            <div className="seats">剩餘座位: {cabin.availableSeats}</div>
+                                            <div className="seats">可購買 {flightData?.flightInfo?.availableSeats || 0} 座</div>
                                             <div className="features">
                                                 <div className="featureTitle">艙等特權：</div>
                                                 <ul>
-                                                    {cabinDescriptionMap[cabin.category].features.map((feature, index) => (
+                                                    {cabinDescriptionMap[category].features.map((feature, index) => (
                                                         <li key={index}>{feature}</li>
                                                     ))}
                                                 </ul>
                                             </div>
                                             <div className="additionalInfo">
-                                                <div>托運行李：{cabinDescriptionMap[cabin.category].baggage}</div>
-                                                <div>餐點服務：{cabinDescriptionMap[cabin.category].meal}</div>
+                                                <div>托運行李：{cabinDescriptionMap[category].baggage}</div>
+                                                <div>餐點服務：{cabinDescriptionMap[category].meal}</div>
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                );
+                            })}
                         </div>
                     </div>
 

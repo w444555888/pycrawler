@@ -17,7 +17,6 @@ import { logOut, setUserInfo } from '../redux/userStore'
 import { persistor } from '../redux/storeConfig'
 import { request } from '../utils/apiService'
 import dayjs from '../utils/dayjs-config'
-import { getTimeZoneByCity } from '../utils/getTimeZoneByCity'
 import { toast } from 'react-toastify'
 import EmptyState from '../subcomponents/EmptyState'
 const Personal = () => {
@@ -196,23 +195,11 @@ const Personal = () => {
             <EmptyState title="無航班訂單" />
           ) : (
             flightOrders.map((order) => {
-              const departureCity = order.route?.departureCity || '未知'
-              const arrivalCity = order.route?.arrivalCity || '未知'
-              const matchedSchedule = order.flightId?.schedules?.find(
-                (s) => s._id === order.scheduleId
-              )
-              const departureDate = matchedSchedule?.departureDate;
-              const arrivalDate = matchedSchedule?.arrivalDate;
-
-              const departureZone = getTimeZoneByCity(departureCity);
-              const arrivalZone = getTimeZoneByCity(arrivalCity);
-
-              const localDepartureTime = departureDate
-                ? dayjs(departureDate).tz(departureZone).format('YYYY-MM-DD HH:mm')
+              const departureTime = order.flightInfo?.departureTime
+                ? dayjs(order.flightInfo.departureTime).format('YYYY-MM-DD HH:mm')
                 : '未知';
-
-              const localArrivalTime = arrivalDate
-                ? dayjs(arrivalDate).tz(arrivalZone).format('YYYY-MM-DD HH:mm')
+              const arrivalTime = order.flightInfo?.arrivalTime
+                ? dayjs(order.flightInfo.arrivalTime).format('YYYY-MM-DD HH:mm')
                 : '未知';
 
               return (
@@ -229,17 +216,42 @@ const Personal = () => {
                     </span>
                   </div>
                   <div className="orderDetails">
-                    <p>航線: {departureCity} → {arrivalCity}</p>
-                    <p>出發時間（當地）: {localDepartureTime}</p>
-                    <p>抵達時間（當地）: {localArrivalTime}</p>
-                    <p>艙等: {
-                      order.category === 'ECONOMY' ? '經濟艙' :
-                        order.category === 'BUSINESS' ? '商務艙' :
-                          order.category === 'FIRST' ? '頭等艙' : '未知'
-                    }</p>
-                    <p>基本票價: ${order.price?.basePrice}</p>
-                    <p>稅金: ${order.price?.tax}</p>
-                    <p>總價: ${order.price?.totalPrice}</p>
+                    <p>
+                      <span>航班信息</span>
+                      <span>{order.flightInfo?.airline} {order.flightInfo?.flightNumber}</span>
+                    </p>
+                    <p>
+                      <span>航線</span>
+                      <span>{order.flightInfo?.departureAirport} → {order.flightInfo?.arrivalAirport}</span>
+                    </p>
+                    <p>
+                      <span>出發時間</span>
+                      <span>{departureTime}</span>
+                    </p>
+                    <p>
+                      <span>抵達時間</span>
+                      <span>{arrivalTime}</span>
+                    </p>
+                    <p>
+                      <span>艙等</span>
+                      <span>{
+                        order.category === 'ECONOMY' ? '經濟艙' :
+                          order.category === 'BUSINESS' ? '商務艙' :
+                            order.category === 'FIRST' ? '頭等艙' : '未知'
+                      }</span>
+                    </p>
+                    <p>
+                      <span>基本票價</span>
+                      <span>${order.price?.basePrice}</span>
+                    </p>
+                    <p>
+                      <span>稅金</span>
+                      <span>${order.price?.tax}</span>
+                    </p>
+                    <p>
+                      <span>總價</span>
+                      <span>${order.price?.totalPrice}</span>
+                    </p>
 
                     <div className="passengerInfo">
                       <p>乘客資訊</p>
@@ -248,7 +260,7 @@ const Personal = () => {
                           <p>乘客 {index + 1}</p>
                           <p data-label="姓名">{passenger.name}</p>
                           <p data-label="性別">{passenger.gender === 1 ? '男' : '女'}</p>
-                          <p data-label="出生年月日">{new Date(passenger.birthDate).toLocaleDateString()}</p>
+                          <p data-label="出生年月日">{dayjs(passenger.birthDate).format('YYYY-MM-DD')}</p>
                           <p data-label="護照號碼">{passenger.passportNumber}</p>
                           <p data-label="E-mail">{passenger.email}</p>
                         </div>
