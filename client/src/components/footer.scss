@@ -1,0 +1,190 @@
+.footer {
+  display: flex;
+  margin-top: 50px;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--footer-bg, var(--card-bg-alt));
+  font-weight: bold;
+  padding-bottom: 30px;
+  color: var(--text-color);
+
+  .title {
+    margin-top: 20px;
+    display: flex;
+    text-align: center;
+    flex-direction: column;
+    padding-top: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-color);
+
+    span {
+      font-size: 18px;
+      color: var(--text-muted);
+    }
+  }
+
+  /* ---------------- Email Subscription ---------------- */
+  .email-container {
+    padding: 20px;
+    max-width: 1024px;
+    width: 100%;
+
+    .wrapper {
+      display: flex;
+      padding: 0px 50px;
+      align-items: center;
+
+      .email {
+        border: 1px solid var(--border-color);
+        background-color: var(--card-bg);
+        color: var(--text-color);
+        border-radius: 6px;
+        height: 45px;
+        width: calc(65% - 25px);
+        font-size: 18px;
+        padding-left: 15px;
+        transition: 0.2s ease;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+        }
+      }
+
+      button {
+        width: 35%;
+        height: 45px;
+        border: none;
+        color: white;
+        border-radius: 6px;
+        font-size: 18px;
+        background-color: var(--primary-color);
+        cursor: pointer;
+        font-weight: 600;
+        transition: 0.3s ease;
+
+        &:hover {
+          background-color: var(--hover-color);
+        }
+      }
+    }
+
+    .checktext {
+      padding: 15px 50px;
+
+      input {
+        margin-right: 5px;
+      }
+
+      label {
+        color: var(--text-muted);
+      }
+    }
+
+    .sub-success {
+      padding: 20px 50px;
+      color: var(--primary-color);
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      background-color: var(--card-bg);
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 10px;
+    }
+  }
+
+  /* ---------------- Sub Links ---------------- */
+  .sub-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    width: 100%;
+    gap: 20px;
+
+    ul {
+      display: flex;
+      gap: 20px;
+
+      li {
+        color: var(--primary-color);
+        cursor: pointer;
+
+        &:hover {
+          color: var(--hover-color);
+        }
+      }
+    }
+  }
+}
+
+/* ====================== RWD ====================== */
+
+@media screen and (max-width: 768px) {
+  .footer {
+    padding: 20px;
+
+    .title {
+      font-size: 20px;
+
+      span {
+        font-size: 16px;
+      }
+    }
+
+    .email-container {
+      padding: 20px 15px;
+
+      .wrapper {
+        flex-direction: column;
+        padding: 0 10px;
+        align-items: stretch;
+
+        .email {
+          width: 100%;
+          margin-bottom: 10px;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+
+    .sub-container ul {
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .footer {
+    .title {
+      font-size: 18px;
+      padding-top: 10px;
+    }
+
+    .email-container {
+      .wrapper {
+        .email {
+          font-size: 16px;
+          height: 40px;
+        }
+
+        button {
+          font-size: 16px;
+          height: 40px;
+        }
+      }
+    }
+
+    .sub-container ul {
+      gap: 8px;
+    }
+  }
+}

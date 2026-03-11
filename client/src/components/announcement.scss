@@ -1,0 +1,264 @@
+.announcement {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  background-color: var(--background-color);
+  color: var(--text-color);
+
+  .container {
+    max-width: 1024px;
+    width: 100%;
+    padding: 0 20px;
+
+    /* ------------------ Info Description ------------------ */
+    .infoDes {
+      margin-top: 50px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 15px 20px;
+      font-size: 16px;
+      background-color: var(--card-bg);
+      border-radius: 5px;
+      color: var(--text-color);
+
+      svg {
+        flex-shrink: 0;
+        color: var(--card-bg);
+        background-color: var(--primary-color);
+        padding: 10px;
+        height: 24px;
+        width: 24px;
+        margin-right: 15px;
+        border-radius: 50%;
+      }
+    }
+
+    /* ------------------ Discount Info ------------------ */
+    .discountInfo {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border-radius: 5px;
+      max-height: 260px;
+      padding: 5px 20px;
+
+      background-color: var(--card-bg);
+      box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+      border: 1px solid var(--border-color);
+
+      .left {
+        width: 150px;
+
+        img {
+          width: 100%;
+          height: auto;
+          border-radius: 4px;
+        }
+      }
+
+      .right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+        color: var(--text-color);
+
+        span:first-child {
+          font-size: 15px;
+          font-weight: 600;
+        }
+
+        span:nth-child(2) {
+          font-size: 13px;
+          color: var(--text-muted);
+        }
+
+        .btn-group {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .btn-normal,
+        .flash-sale-btn {
+          padding: 8px 12px;
+          border: none;
+          border-radius: 4px;
+          font-size: 13px;
+          cursor: pointer;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          white-space: nowrap;
+          transition: 0.2s ease;
+        }
+
+        .btn-normal {
+          background-color: var(--primary-color);
+          color: white;
+
+          &:hover {
+            background-color: var(--hover-color);
+          }
+        }
+
+        .flash-sale-btn {
+          background: #e53935;
+          color: white;
+          display: flex;
+          gap: 6px;
+
+          svg {
+            font-size: 12px;
+          }
+
+          &:hover {
+            background: #d32f2f;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* -------------------------- RWD: 768px -------------------------- */
+@media screen and (max-width: 768px) {
+  .announcement .infoDes {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 15px;
+    font-size: 14px;
+
+    svg {
+      margin-bottom: 10px;
+    }
+  }
+
+  .announcement .discountInfo {
+    height: auto;
+    flex-direction: column;
+    padding: 15px;
+    text-align: center;
+
+    .left {
+      width: 120px;
+    }
+
+    .right {
+      align-items: center;
+    }
+  }
+}
+
+/* -------------------------- RWD: 480px -------------------------- */
+@media screen and (max-width: 480px) {
+  .announcement .infoDes {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .announcement .infoDes svg {
+    height: 20px;
+    width: 20px;
+  }
+
+  .announcement .discountInfo {
+    padding: 12px;
+
+    .left {
+      width: 100px;
+    }
+  }
+}
+
+/* ======================================================================= */
+/*                              GLOBAL BANNER                              */
+/* ======================================================================= */
+
+.globalBanner {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  border-radius: 5px;
+  padding: 15px 20px;
+  height: 200px;
+
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+
+  background-repeat: no-repeat;
+  background-position: right;
+  background-image: url("https://cf.bstatic.com/static/img/genius-banner-world-bg/2b5cdbad7b92073bc396b8b59d0bb421b3a01cba.png");
+
+  img {
+    width: 180px;
+    border-radius: 8px;
+    margin-right: 20px;
+  }
+
+  .bannerInfoDes {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    color: var(--text-color);
+
+    button {
+      border: 1px solid var(--border-color);
+      padding: 8px 15px;
+      border-radius: 4px;
+      background-color: var(--card-bg);
+      color: var(--primary-color);
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: var(--hover-bg, rgba(0,0,0,0.08));
+      }
+    }
+
+    .buttonActive {
+      border: 2px solid var(--primary-color);
+    }
+  }
+}
+
+/* -------------------------- RWD: 768px -------------------------- */
+@media screen and (max-width: 768px) {
+  .globalBanner {
+    flex-direction: column;
+    background-position: center;
+
+    img {
+      width: 150px;
+      margin-bottom: 10px;
+      margin-right: 0;
+    }
+
+    .bannerInfoDes {
+      align-items: center;
+      gap: 12px;
+    }
+  }
+}
+
+/* -------------------------- RWD: 480px -------------------------- */
+@media screen and (max-width: 480px) {
+  .globalBanner {
+    flex-direction: column;
+    padding: 12px;
+
+    img {
+      width: 120px;
+      margin-bottom: 8px;
+    }
+
+    .bannerInfoDes {
+      gap: 8px;
+    }
+  }
+}

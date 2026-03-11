@@ -1,0 +1,16 @@
+.users-container {
+  padding: 24px;
+  background-color: #f9f9f9;
+
+  .users-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .users-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 16px;
+      color: #333;
+    }
+  }
+}

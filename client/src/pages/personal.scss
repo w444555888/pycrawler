@@ -1,0 +1,283 @@
+.personalWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+
+  .personalContainer {
+    width: 100%;
+    max-width: 520px;
+    margin: 20px 0;
+    padding: 30px;
+    border-radius: 15px;
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .personalTitle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+
+      .logo {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--text-color);
+        letter-spacing: 1px;
+      }
+
+      .navButton {
+        padding: 10px 12px;
+        border-radius: 20px;
+        background-color: var(--primary-color);
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateX(2px);
+          opacity: 0.9;
+        }
+      }
+    }
+
+    h2 {
+      font-size: 24px;
+      color: var(--text-color);
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .formGroup {
+      margin-bottom: 20px;
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-muted);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      input {
+        width: 95%;
+        padding: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--text-color);
+        background-color: var(--card-bg-alt);
+        transition: all 0.3s ease;
+
+        &:focus {
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+          outline: none;
+        }
+
+        &:disabled {
+          background-color: var(--card-bg-alt);
+          cursor: not-allowed;
+          opacity: 0.7;
+        }
+      }
+    }
+
+    /* Buttons */
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      cursor: pointer;
+
+      &[type="submit"] {
+        width: 50%;
+        margin-right: 10px;
+        background-color: var(--primary-color);
+        color: #fff;
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+      }
+
+      &:last-child {
+        width: 40%;
+        background-color: var(--danger-color, #e74c3c);
+        color: #fff;
+
+        &:hover {
+          opacity: 0.9;
+        }
+      }
+    }
+  }
+}
+
+/* ---------------- Order List ---------------- */
+.orderList {
+  margin-top: 30px;
+
+  .orderItem {
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* ---------------- Order Header ---------------- */
+    .orderHeader {
+      display: flex;
+      justify-content: space-between;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+
+      span {
+        font-size: 14px;
+        color: var(--text-color);
+        font-weight: 600;
+      }
+    }
+
+    /* ---------------- Order Details ---------------- */
+    .orderDetails {
+      p {
+        margin: 8px 0;
+        color: var(--text-muted);
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        text-align: left;
+      }
+
+      /* ---------------- Passenger Info ---------------- */
+      .passengerInfo {
+        margin-top: 20px;
+
+        > p {
+          font-size: 1.1em;
+          color: var(--text-color);
+          margin-bottom: 15px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          &::after {
+            content: "";
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(to right, var(--primary-color), transparent);
+          }
+        }
+
+        /* -------- Passenger Card -------- */
+        .passenger {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 10px;
+          padding: 15px;
+          position: relative;
+          background-color: var(--card-bg-alt);
+          border-radius: 6px;
+          border: 1px solid var(--border-color);
+
+          &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 95%;
+            width: 3px;
+            background: linear-gradient(to bottom, var(--primary-color));
+            opacity: 0.7;
+            border-radius: 2px;
+          }
+
+          &:not(:last-child) {
+            margin-bottom: 15px;
+          }
+
+          p {
+            position: relative;
+            padding: 8px 12px;
+            background-color: var(--card-bg);
+            border-radius: 4px;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+
+            &:first-child {
+              grid-column: 1 / -1;
+              background-color: rgba(var(--primary-rgb), 0.1);
+              color: var(--primary-color);
+              font-weight: 500;
+            }
+
+            &:not(:first-child) {
+              display: flex;
+              justify-content: space-between;
+
+              &::before {
+                content: attr(data-label);
+                font-weight: 500;
+                color: var(--text-muted);
+                margin-right: 10px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+/* ----------------- RWD: max-width 1024px ---------------- */
+@media (max-width: 1024px) {
+  .personalWrapper {
+    padding: 30px 15px;
+    width: 80%;
+    background-color: var(--background-color);
+    color: var(--text-color);
+
+    .personalContainer {
+      max-width: 450px;
+      padding: 25px;
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+
+      .logo {
+        font-size: 22px;
+        color: var(--text-color);
+      }
+
+      button[type="submit"],
+      button:last-child {
+        font-size: 14px;
+      }
+    }
+  }
+}

@@ -1,0 +1,82 @@
+.feature {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--background-color);
+  color: var(--text-color);
+
+  .container {
+    width: 100%;
+    max-width: 1024px;
+
+    .listTitle {
+      padding: 15px 10px;
+
+      span {
+        font-size: 18px;
+        font-weight: bold;
+        color: var(--text-color);
+      }
+    }
+
+    .listItems {
+      padding: 0px 10px;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+
+      /* 卡片內元素建議這邊加（如果你資料是動態的） */
+      > * {
+        flex: 0 0 auto;
+      }
+    }
+  }
+}
+
+/* ------------------------ RWD 768px ------------------------ */
+@media screen and (max-width: 768px) {
+  .feature {
+    .container {
+      padding: 0 15px;
+    }
+
+    .listItems {
+      padding: 0 5px;
+      overflow-x: auto;
+    }
+
+    /* 捲軸樣式 */
+    .listItems::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .listItems::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb, rgba(0, 0, 0, 0.25));
+      border-radius: 10px;
+    }
+
+    .listItems::-webkit-scrollbar-track {
+      background: var(--scrollbar-track, transparent);
+    }
+  }
+}
+
+/* ------------------------ RWD 480px ------------------------ */
+@media screen and (max-width: 480px) {
+  .feature {
+
+    .container {
+      padding: 0 10px;
+    }
+
+    .listItems {
+      flex-direction: column;
+      gap: 10px;
+      overflow-x: hidden;
+      overflow-y: visible;
+    }
+  }
+}

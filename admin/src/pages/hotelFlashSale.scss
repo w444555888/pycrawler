@@ -1,0 +1,67 @@
+.hotelFlashSale-container {
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+.hotelFlashSale-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    .hotelFlashSale-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    button {
+        border-radius: 6px;
+    }
+}
+
+
+.hotelFlashSale-table {
+    .ant-table {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .ant-image {
+        border-radius: 6px;
+        overflow: hidden;
+    }
+}
+
+.margin-ten{
+    margin: 10px;
+}
+
+
+.hotelFlashSale-upload {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .ant-upload {
+        margin-right: 10px;
+    }
+
+    img,
+    .ant-image {
+        border-radius: 8px;
+        object-fit: cover;
+    }
+}
+
+
+.inventory-section {
+    margin-top: 20px;
+
+    .inventory-title {
+        margin-bottom: 10px;
+        font-weight: 600;
+        font-size: 16px;
+    }
+}

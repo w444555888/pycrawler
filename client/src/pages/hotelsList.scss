@@ -1,0 +1,298 @@
+/* ---------------- Empty State ---------------- */
+
+.empty-state-wrapper {
+  width: 100%;
+  min-height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-color);
+}
+
+/* ---------------- List Layout ---------------- */
+
+.listContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+
+  .listWrapper {
+    width: 100%;
+    max-width: 1024px;
+    gap: 40px;
+    display: flex;
+  }
+}
+
+/* ---------------- Search Sidebar ---------------- */
+
+.listSearch {
+  flex: 0 0 360px;
+  background-color: var(--card-bg-alt);
+  padding: 30px;
+  border-radius: 10px;
+  height: max-content;
+  top: 10px;
+  color: var(--text-color);
+
+  .searchTitle {
+    color: var(--text-color);
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .limitTitle {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    display: block;
+  }
+
+  .listItmConditions {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 14px;
+    color: var(--text-color);
+    background-color: var(--card-bg);
+    cursor: pointer;
+    box-sizing: border-box;
+
+    &:hover {
+      border-color: var(--primary-color);
+    }
+  }
+}
+
+/* ---------------- List Result ---------------- */
+
+.listResult {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-color);
+}
+
+/* ---------------- List Item ---------------- */
+
+.listItem {
+  width: 300px;
+  margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: var(--text-color);
+
+  .searchInput {
+    border: 1px solid var(--border-color);
+    padding: 10px 5px;
+    border-radius: 5px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+
+    &:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+  }
+
+  .dates {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+  }
+
+  .searchbtn {
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    font-size: 20px;
+    color: #fff;
+    cursor: pointer;
+    background-color: var(--primary-color);
+    transition: 0.3s;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-color);
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      accent-color: var(--primary-color);
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+/* ---------------- Price Limit ---------------- */
+
+.listItemLimitPrice {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+
+  .searchInput {
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border-radius: 5px;
+  }
+}
+
+/* ---------------- Result Title ---------------- */
+
+.resultTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  color: var(--text-color);
+}
+
+/* ---------------- Loading Skeleton ---------------- */
+
+.skeleton-item {
+  padding: 20px;
+  margin-bottom: 20px;
+  background: var(--card-bg);
+  border-radius: 8px;
+
+  .skeleton-wrapper {
+    display: flex;
+    gap: 20px;
+  }
+
+  .skeleton-image {
+    width: 200px;
+    height: 200px;
+    border-radius: 8px;
+    background-color: var(--card-bg-alt);
+  }
+
+  .skeleton-content {
+    flex: 1;
+
+    .skeleton-title {
+      height: 30px;
+      margin-bottom: 10px;
+      width: 300px;
+      background-color: var(--card-bg-alt);
+      border-radius: 4px;
+    }
+
+    .skeleton-text {
+      margin-bottom: 10px;
+      height: 16px;
+      background-color: var(--card-bg-alt);
+      border-radius: 4px;
+    }
+
+    .skeleton-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .skeleton-price,
+      .skeleton-button {
+        width: 100px;
+        height: 20px;
+        background-color: var(--card-bg-alt);
+        border-radius: 4px;
+      }
+    }
+  }
+}
+
+/* ---------------- Responsive ---------------- */
+
+@media (max-width: 1024px) {
+  .listContainer {
+    padding: 0 10px;
+  }
+
+  .listWrapper {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .listItem {
+    width: 100%;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .listWrapper {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .listSearch {
+    flex: none;
+    width: 100%;
+    padding: 20px;
+    background-color: var(--card-bg-alt);
+    box-sizing: border-box;
+  }
+
+  .listResult {
+    width: 100%;
+  }
+
+  .listItem {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .searchTitle {
+    font-size: 18px;
+  }
+
+  .searchbtn {
+    font-size: 18px;
+    padding: 8px;
+  }
+
+  .skeleton-wrapper {
+    flex-direction: column;
+  }
+
+  .skeleton-image {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .listWrapper {
+    gap: 10px;
+  }
+
+  .listItem {
+    width: 100%;
+    font-size: 18px;
+  }
+
+  .searchTitle {
+    font-size: 16px;
+  }
+
+  .listSearch {
+    padding: 15px;
+  }
+
+  .searchbtn {
+    font-size: 16px;
+    padding: 7px;
+  }
+}

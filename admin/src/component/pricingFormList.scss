@@ -1,0 +1,16 @@
+.weekday-select {
+  display: block;
+  width: 200px;
+
+  .ant-select-selector {
+    min-width: 200px !important;
+    min-height: 32px;
+  }
+}
+
+.pricing-item-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap; 
+}

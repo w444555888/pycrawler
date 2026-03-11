@@ -1,0 +1,67 @@
+* {
+  font-family: "Open Sans", sans-serif;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+//主題
+$themes: (
+  light: (
+    primary-color: #3b82f6,
+    background-color: #ffffff,
+    text-color: #1f2937,
+    hover-color: #2563eb
+  ),
+
+  dark: (
+    primary-color: #60a5fa,
+    background-color: #0d1117,
+    text-color: #e5e7eb,
+    hover-color: #93c5fd
+  )
+);
+
+// 主題函數
+@mixin apply-theme($var) {
+  --primary-color: #{map-get($var, primary-color)};
+  --background-color: #{map-get($var, background-color)};
+  --text-color: #{map-get($var, text-color)};
+  --hover-color: #{map-get($var, hover-color)};
+  --card-bg: #{if(map-get($var, background-color) == #ffffff, #ffffff, #1f242c)};
+  --card-bg-alt: #{if(map-get($var, background-color) == #ffffff, #f8f9fa, #1b1f27)};
+  --border-color: #{if(map-get($var, background-color) == #ffffff, #e0e0e0, #2e3440)};
+  --text-muted: #{if(map-get($var, background-color) == #ffffff, #6c757d, #9ca3af)};
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+  --danger-color: #dc3545;
+}
+
+// 預設
+:root {
+  @include apply-theme(map-get($themes, light));
+}
+
+.dark-theme {
+  @include apply-theme(map-get($themes, dark));
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+h1,
+h2 {
+  color: var(--primary-color);
+}
+
+a,
+button {
+  color: var(--primary-color);
+  transition: color 0.3s ease;
+}
+
+a:hover,
+button:hover {
+  color: var(--hover-color);
+}

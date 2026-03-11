@@ -1,0 +1,192 @@
+.navbar {
+  width: 100%;
+  height: 130px;
+  /* 整個欄高 */
+  background-color: var(--primary-color);
+  display: flex;
+  justify-content: center;
+
+  .navbarContainer {
+    width: 90%;
+    height: 100%;
+    max-width: 1024px;
+    color: white;
+
+    .lineOne {
+      display: flex;
+      height: 60%;
+      align-items: center;
+      justify-content: space-between;
+
+      .navButton {
+        font-size: 14px;
+        border: none;
+        border-radius: 25px;
+        padding: 8px 16px;
+        cursor: pointer;
+        color: var(--primary-color);
+        margin: 10px;
+      }
+
+      .left {
+        display: flex;
+        cursor: pointer;
+
+        span {
+          font-size: 20px;
+          font-weight: 500;
+        }
+      }
+
+      .right {
+        display: flex;
+        align-items: center;
+
+        .navButton {
+          font-size: 14px;
+          margin-left: 10px;
+          border: none;
+          border-radius: 25px;
+          padding: 8px 16px;
+          cursor: pointer;
+          color: var(--primary-color);
+        }
+      }
+    }
+
+    .lineTwo {
+      display: flex;
+      height: 50%;
+      align-items: flex-start;
+      /* 讓lineTwo靠近lineOne */
+      gap: 20px;
+      /* 每個btn的間距 */
+
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: 25px;
+        padding: 10px 15px;
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.14);
+        }
+      }
+    }
+  }
+}
+
+.navbar-active {
+  border: white 1px solid;
+}
+
+@media screen and (max-width: 1024px) {
+  .navbar {
+    .navbarContainer {
+      width: 95%;
+
+      .lineOne {
+        height: 60%;
+
+        .left span {
+          font-size: 18px;
+        }
+
+        .right .navButton {
+          font-size: 12px;
+        }
+      }
+
+      .lineTwo {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+
+        .item {
+          justify-content: center;
+          padding: 8px 12px;
+          flex-wrap: wrap;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .navbar {
+    height: auto;
+
+    .navbarContainer {
+      width: 100%;
+      padding: 0 10px;
+
+      .lineOne {
+        height: auto;
+        margin-bottom: 10px;
+
+        .left span {
+          font-size: 16px;
+        }
+
+        .right .navButton {
+          font-size: 12px;
+          margin-left: 10px;
+          margin-top: 0;
+        }
+      }
+
+      .lineTwo {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+
+        .item {
+          flex-direction: row;
+          align-items: center;
+          padding: 6px 10px;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .navbar {
+    .navbarContainer {
+      width: 100%;
+      padding: 0 5px;
+
+      .lineOne {
+        flex-direction: column;
+        align-items: center;
+        height: auto;
+
+        .left span {
+          font-size: 14px;
+          margin: 10px;
+        }
+
+        .right .navButton {
+          margin: 10px;
+          font-size: 12px;
+          margin-left: 0;
+          margin-top: 5px;
+        }
+      }
+
+      .lineTwo {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+
+        .item {
+          flex-direction: row;
+          align-items: center;
+          padding: 5px 8px;
+        }
+      }
+    }
+  }
+}
