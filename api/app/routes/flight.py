@@ -18,10 +18,18 @@ router = APIRouter(tags=["flights"])
 
 @router.get("/locations/search")
 async def route_search_locations(
-    keyword: str = Query(...)
+    keyword: str = Query(...),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50)
 ):
-    """搜尋機場和城市"""
-    return await search_locations(keyword)
+    """搜尋機場和城市 (支持分頁)
+    
+    查询参数：
+    - keyword: 搜尋關鍵詞 (必填)
+    - page: 頁碼 (預設 1)
+    - limit: 每頁結果數 (預設 10, 最多 50)
+    """
+    return await search_locations(keyword, page, limit)
 
 
 # ----------- Search Flights -----------
@@ -31,10 +39,21 @@ async def route_search_flights(
     origin: str = Query(...),
     destination: str = Query(...),
     date: str = Query(...),
-    returnDate: Optional[str] = Query(None)
+    returnDate: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50)
 ):
-    """搜尋航班"""
-    return await search_flights(origin, destination, date, returnDate)
+    """搜尋航班 (支持分頁)
+    
+    查询参数：
+    - origin: 出發地 IATA 代碼 (必填)
+    - destination: 目的地 IATA 代碼 (必填)
+    - date: 出發日期 YYYY-MM-DD (必填)
+    - returnDate: 回程日期 YYYY-MM-DD (可選)
+    - page: 頁碼 (預設 1)
+    - limit: 每頁結果數 (預設 10, 最多 50)
+    """
+    return await search_flights(origin, destination, date, returnDate, page, limit)
 
 
 # ----------- Flight Order 訂單 -----------

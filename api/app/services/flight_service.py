@@ -13,18 +13,23 @@ from app.utils.error_handler import raise_error
 amadeus = AmadeusService()
 
 
-async def search_locations(keyword: str):
+async def search_locations(keyword: str, page: int = 1, limit: int = 10):
     """
     搜尋機場和地點 (模糊搜尋)
     
     用於協助用戶選擇出發地和目的地
     支援機場代碼、城市名稱等搜尋
+    支持分頁查詢
     
     參數:
         keyword: 搜尋關鍵詞 (例: "LAX", "Los Angeles", "紐約")
+        page: 頁碼 (預設 1)
+        limit: 每頁結果數 (預設 10)
     
     返回:
         {
+            "code": 0,
+            "message": "Success",
             "data": [
                 {
                     "iataCode": "LAX",
@@ -33,19 +38,48 @@ async def search_locations(keyword: str):
                     "country": "US",
                     "countryName": "United States"
                 }
-            ]
+            ],
+            "pagination": {
+                "page": 1,
+                "limit": 10,
+                "total": 28,
+                "totalPages": 3,
+                "hasNext": true
+            }
         }
     """
     try:
         if not keyword or len(keyword.strip()) < 2:
             raise_error(400, "搜尋關鍵詞至少需要 2 個字符")
         
-        result = await amadeus.search_locations(keyword.strip())
+        if page < 1:
+            raise_error(400, "頁碼必須大於 0")
+        
+        if limit < 1 or limit > 50:
+            raise_error(400, "每頁結果數必須在 1 到 50 之間")
+        
+        result = await amadeus.search_locations(keyword.strip(), page, limit)
         
         if "error" in result:
             raise_error(400, f"搜尋失敗: {result['error']}")
         
-        return success(data=result.get("location_results", []))
+        meta = result.get("meta", {})
+        locations = result.get("location_results", [])
+        
+        pagination_info = {
+            "page": meta.get("page", page),
+            "limit": meta.get("limit", limit),
+            "total": meta.get("count", 0),
+            "totalPages": meta.get("totalPages", 0),
+            "hasNext": meta.get("links", {}).get("next") is not None
+        }
+        
+        return success(
+            data={
+                "items": locations,
+                "pagination": pagination_info
+            }
+        )
     
     except Exception as e:
         raise_error(400, f"搜尋地點失敗: {str(e)}")
@@ -132,16 +166,25 @@ def convert_amadeus_to_flight_info(amadeus_flight: Dict) -> Dict:
         raise_error(400, f"無法解析飛行數據: {str(e)}")
 
 
-async def search_flights(origin, destination, date, returnDate=None):
+async def search_flights(origin, destination, date, returnDate=None, page: int = 1, limit: int = 10):
     """
-    搜尋航班
+    搜尋航班 (支持分頁)
     
     參數:
         origin: 出發地 IATA 代碼
         destination: 目的地 IATA 代碼
         date: 出發日期 (YYYY-MM-DD)
         returnDate: 回程日期 (YYYY-MM-DD，可選，如果提供表示搜尋來回航班)
+        page: 頁碼 (預設 1)
+        limit: 每頁結果數 (預設 10)
     """
+    # 驗證參數
+    if page < 1:
+        raise_error(400, "頁碼必須大於 0")
+    
+    if limit < 1 or limit > 50:
+        raise_error(400, "每頁結果數必須在 1 到 50 之間")
+    
     # 調用 Amadeus 服務搜尋航班，傳遞 returnDate
     data = await amadeus.search_flights(origin, destination, date, returnDate)
 
@@ -172,7 +215,31 @@ async def search_flights(origin, destination, date, returnDate=None):
             print(f"警告: 無法解析飛行數據 - {str(e)}")
             continue
 
-    return success(data=flights)
+    # 計算分頁
+    total_count = len(flights)
+    total_pages = (total_count + limit - 1) // limit
+    
+    # 計算起始和結束索引
+    start_idx = (page - 1) * limit
+    end_idx = start_idx + limit
+    
+    # 獲取當前頁的數據
+    paginated_flights = flights[start_idx:end_idx]
+    
+    pagination_info = {
+        "page": page,
+        "limit": limit,
+        "total": total_count,
+        "totalPages": total_pages,
+        "hasNext": page < total_pages
+    }
+    
+    return success(
+        data={
+            "items": paginated_flights,
+            "pagination": pagination_info
+        }
+    )
 
 
 # 建立飛行訂單

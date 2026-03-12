@@ -87,16 +87,28 @@ class AmadeusService:
 
         return {"航班搜尋結果 (flights)": result}
 
-    async def search_locations(self, keyword: str) -> dict:
+    async def search_locations(self, keyword: str, page: int = 1, limit: int = 10) -> dict:
         """
         搜尋機場和城市
         使用 Amadeus 城市搜尋 API
         
         參數:
             keyword: 搜尋關鍵詞 (機場代碼、城市名稱等)
+            page: 頁碼 (預設 1)
+            limit: 每頁結果數 (預設 10)
         
         返回:
             {
+                "meta": {
+                    "count": 28,
+                    "page": 1,
+                    "limit": 10,
+                    "links": {
+                        "self": "...",
+                        "next": "...",
+                        "last": "..."
+                    }
+                },
                 "location_results": [
                     {
                         "iataCode": "LAX",
@@ -110,6 +122,8 @@ class AmadeusService:
         """
         try:
             token = await self.get_token()
+            offset = (page - 1) * limit
+            
             async with httpx.AsyncClient() as client:
                 res = await client.get(
                     f"{BASE_URL}/v1/reference-data/locations",
@@ -117,7 +131,8 @@ class AmadeusService:
                     params={
                         "keyword": keyword,
                         "subType": "AIRPORT,CITY",
-                        "page[limit]": 10
+                        "page[limit]": limit,
+                        "page[offset]": offset
                     }
                 )
             res.raise_for_status()
@@ -135,6 +150,44 @@ class AmadeusService:
                 }
                 locations.append(location)
             
-            return {"location_results": locations}
+            # 提取分頁元數據
+            meta_data = data.get("meta", {})
+            total_count = meta_data.get("count", len(locations))
+            links = meta_data.get("links", {})
+            
+            # 計算總頁數
+            total_pages = (total_count + limit - 1) // limit
+            
+            # 構建返回的 meta 信息
+            result_meta = {
+                "count": total_count,
+                "page": page,
+                "limit": limit,
+                "totalPages": total_pages,
+                "links": {
+                    "self": links.get("self", ""),
+                    "next": links.get("next") if page < total_pages else None,
+                    "last": links.get("last", "")
+                }
+            }
+            
+            return {
+                "meta": result_meta,
+                "location_results": locations
+            }
         except Exception as e:
-            return {"location_results": [], "error": str(e)}
+            return {
+                "meta": {
+                    "count": 0,
+                    "page": page,
+                    "limit": limit,
+                    "totalPages": 0,
+                    "links": {
+                        "self": None,
+                        "next": None,
+                        "last": None
+                    }
+                },
+                "location_results": [],
+                "error": str(e)
+            }

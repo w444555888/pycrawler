@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlane } from '@fortawesome/free-solid-svg-icons'
 import { request } from '../utils/apiService'
 import dayjs from '../utils/dayjs-config'
+import formatDuration from '../utils/formatDuration';
 import gsap from 'gsap';
 import { toast } from 'react-toastify'
 import Skeleton from 'react-loading-skeleton'
@@ -229,8 +230,7 @@ const BookingFlight = () => {
                         </div>
 
                         <div className="arrow">
-                            {flightData?.flightInfo?.itineraryDuration}
-                            <FontAwesomeIcon icon={faPlane} />
+                            ✈️ {formatDuration(flightData?.flightInfo?.itineraryDuration)}
                         </div>
 
                         <div className="arrival">
