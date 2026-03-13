@@ -15,7 +15,7 @@ class NewsletterService:
     async def send_daily_newsletter():
         """發送每日電子報"""
         try:
-            # 获取所有订阅者邮箱
+            # 獲取所有訂閱者郵箱
             from app.services.subscribe_service import SubscribeService
             subscriber_emails = await SubscribeService.get_all_subscriber_emails()
             
@@ -71,7 +71,7 @@ class NewsletterService:
                     successful_count += 1
                     logger.info(f"電子報發送成功: {email}")
                     
-                    # 避免發送過快，稍作延遲
+                    # 避免發送過快
                     await asyncio.sleep(0.5)
                     
                 except Exception as e:
@@ -131,7 +131,7 @@ class NewsletterService:
             raise e
 
 
-# 定時任務函數（可配合 cron 或其他任務調度器使用）
+# 定時任務函數
 async def run_daily_newsletter():
     """執行每日電子報發送任務"""
     current_time = datetime.now()
@@ -140,8 +140,3 @@ async def run_daily_newsletter():
     await NewsletterService.send_daily_newsletter()
     
     logger.info("每日電子報任務完成")
-
-
-if __name__ == "__main__":
-    # 測試運行
-    asyncio.run(run_daily_newsletter())
