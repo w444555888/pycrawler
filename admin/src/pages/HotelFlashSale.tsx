@@ -43,7 +43,7 @@ const HotelFlashSale = () => {
 
     const handleEdit = async (record: any) => {
 
-        const saleRes = await request("GET", `/hotelFlashSale/${record._id}`);
+        const saleRes = await request("GET", `/hotelFlashSale/${record.id}`);
 
         if (!saleRes.success) {
             message.error("讀取活動失敗");
@@ -53,16 +53,16 @@ const HotelFlashSale = () => {
         const sale = saleRes.data;
 
         // 取得每日庫存
-        const invRes = await request("GET", `/hotelFlashSale/inventory/${record._id}`);
+        const invRes = await request("GET", `/hotelFlashSale/inventory/${record.id}`);
         const inventory = invRes.success ? invRes.data : [];
 
         // 重新取得該飯店的房型列表
-        await handleHotelChange(sale.hotelId._id);
+        await handleHotelChange(sale.hotelId);
 
         setEditingSale({
             ...sale,
-            hotelId: sale.hotelId._id,
-            roomId: sale.roomId._id,
+            hotelId: sale.hotelId,
+            roomId: sale.roomId,
             inventory,
             startTime: dayjs(sale.startTime),
             endTime: dayjs(sale.endTime),
@@ -89,7 +89,7 @@ const HotelFlashSale = () => {
         if (!editingSale) return;
 
         const payload = {
-            saleId: editingSale._id,
+            saleId: editingSale.id,
             date,
             totalRooms,
         };
@@ -118,7 +118,7 @@ const HotelFlashSale = () => {
 
         formData.append('banner', file);
         if (editingSale) {
-            formData.append('saleId', editingSale._id);
+            formData.append('saleId', editingSale.id);
         }
 
         const res = await request('POST', '/hotelFlashSale/upload-banner', formData);
@@ -145,7 +145,7 @@ const HotelFlashSale = () => {
             delete payload.roomId;
         }
         const res = editingSale
-            ? await request('PUT', `/hotelFlashSale/${editingSale._id}`, payload)
+            ? await request('PUT', `/hotelFlashSale/${editingSale.id}`, payload)
             : await request('POST', '/hotelFlashSale', payload);
 
         if (res.success) {
@@ -169,7 +169,7 @@ const HotelFlashSale = () => {
             type: 'select',
             required: true,
             readOnly: isEditing,
-            options: hotels.map((h) => ({ label: h.name, value: h._id })),
+            options: hotels.map((h) => ({ label: h.name, value: h._id || h.id })),
             onChange: handleHotelChange
         },
         {
@@ -178,7 +178,7 @@ const HotelFlashSale = () => {
             type: 'select',
             required: true,
             readOnly: isEditing,
-            options: rooms.map((r) => ({ label: r.title, value: r._id })),
+            options: rooms.map((r) => ({ label: r.title, value: r._id || r.id })),
         },
         { name: 'basePrice', label: '活動底價（固定售價）', type: 'number', required: true, readOnly: isEditing },
         { name: 'discountRate', label: '折扣（例如 0.8 = 8 折）', type: 'number', required: true },
@@ -219,13 +219,13 @@ const HotelFlashSale = () => {
         },
         {
             title: '飯店',
-            dataIndex: ['hotelId', 'name'],
-            render: (_: any, record: any) => record.hotelId?.name || '-',
+            dataIndex: 'hotelId',
+            render: (hotelId: string) => hotelId || '-',
         },
         {
             title: '房型',
-            dataIndex: ['roomId', 'title'],
-            render: (_: any, record: any) => record.roomId?.title || '-',
+            dataIndex: 'roomId',
+            render: (roomId: string) => roomId || '-',
         },
         {
             title: '活動時間',
@@ -247,7 +247,7 @@ const HotelFlashSale = () => {
             render: (_: any, record: any) => (
                 <Space>
                     <Button onClick={() => handleEdit(record)}>編輯</Button>
-                    <Button danger onClick={() => handleDelete(record._id)}>
+                    <Button danger onClick={() => handleDelete(record.id)}>
                         刪除
                     </Button>
                 </Space>
@@ -267,7 +267,7 @@ const HotelFlashSale = () => {
             <Table
                 columns={columns}
                 dataSource={sales}
-                rowKey="_id"
+                rowKey="id"
                 loading={loading}
                 className="hotel-table"
             />

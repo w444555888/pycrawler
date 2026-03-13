@@ -9,9 +9,12 @@ from app.core.config import settings
 from app.models.hotel import Hotel
 from app.models.room import Room
 from app.models.order import Order
-from app.routes import hotels, rooms, users, auth, order, flight, captcha
+from app.models.hotel_flash_sale import HotelFlashSale, HotelFlashSaleInventory, HotelFlashSaleOrder
+from app.models.subscribe import Subscribe
+from app.routes import hotels, rooms, users, auth, order, flight, captcha, hotel_flash_sale, subscribe
 from app.db import init_db
 from app.utils.error_handler import http_error_handler, validation_exception_handler
+from app.scheduler import start_scheduler, stop_scheduler
 
 app = FastAPI(title="Hotel Booking API")
 
@@ -19,11 +22,21 @@ app = FastAPI(title="Hotel Booking API")
 Hotel.model_rebuild()
 Room.model_rebuild()
 Order.model_rebuild()
+HotelFlashSale.model_rebuild()
+HotelFlashSaleInventory.model_rebuild()
+HotelFlashSaleOrder.model_rebuild()
+Subscribe.model_rebuild()
 
-# 啟動時初始化 DB
+# 啟動時初始化 DB 和定時任務
 @app.on_event("startup")
 async def on_startup():
     await init_db()
+    await start_scheduler()  # 啟動定時任務調度器
+
+# 關閉時停止定時任務
+@app.on_event("shutdown")
+async def on_shutdown():
+    await stop_scheduler()  # 停止定時任務調度器
 
 # 設定 CORS
 app.add_middleware(
@@ -42,6 +55,8 @@ app.include_router(auth.router, prefix="/api/v1/auth")
 app.include_router(order.router, prefix="/api/v1/order")
 app.include_router(flight.router, prefix="/api/v1/flight")
 app.include_router(captcha.router, prefix="/api/v1/captcha")
+app.include_router(hotel_flash_sale.router, prefix="/api/v1/hotelFlashSale")
+app.include_router(subscribe.router, prefix="/api/v1/subscribe")
 
 # 統一錯誤格式處理器
 app.add_exception_handler(HTTPException, http_error_handler)

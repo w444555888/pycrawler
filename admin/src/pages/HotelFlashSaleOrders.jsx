@@ -22,29 +22,28 @@ const HotelFlashSaleOrders = () => {
   const columns = [
     {
       title: "訂單編號",
-      dataIndex: "_id",
-      key: "_id",
+      dataIndex: "id",
+      key: "id",
     },
     {
-      title: "活動名稱",
-      dataIndex: ["saleId", "title"],
-      key: "saleTitle",
-      render: (title) => title || "—",
+      title: "活動ID",
+      dataIndex: "saleId",
+      key: "saleId",
     },
     {
-      title: "使用者",
-      dataIndex: ["userId", "username"],
-      key: "user",
+      title: "使用者ID",
+      dataIndex: "userId",
+      key: "userId",
     },
     {
-      title: "飯店",
-      dataIndex: ["hotelId", "name"],
-      key: "hotel",
+      title: "飯店ID",
+      dataIndex: "hotelId",
+      key: "hotelId",
     },
     {
-      title: "房型",
-      dataIndex: ["roomId", "title"],
-      key: "room",
+      title: "房型ID",
+      dataIndex: "roomId",
+      key: "roomId",
     },
     {
       title: "日期",
@@ -81,7 +80,7 @@ const HotelFlashSaleOrders = () => {
     <div>
       <h2 style={{ marginBottom: 20 }}>限時搶購訂單</h2>
       <Table
-        rowKey="_id"
+        rowKey="id"
         dataSource={orders}
         columns={columns}
         loading={loading}
