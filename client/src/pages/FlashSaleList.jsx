@@ -60,7 +60,7 @@ const FlashSaleList = () => {
                             onClick={() => navigate(`/flash-sale/${item._id}`)}
                         >
                             <div className="fs-img-wrap">
-                                <img src={'https://my-app-aoxz.onrender.com' + item.bannerUrl} className="fs-img" />
+                                <img src={'https://pycrawler-w5we.onrender.com' + item.bannerUrl} className="fs-img" />
                             </div>
 
                             <div className="fs-info">

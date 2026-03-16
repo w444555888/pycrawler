@@ -44,7 +44,7 @@ class NewsletterService:
                 </div>
                 
                 <p style="margin-top: 30px;">
-                    立即前往 <a href="https://my-app-client-l6r7.onrender.com" style="color: #2563eb;">MIKE.BOOKING</a> 
+                    立即前往 <a href="https://pycrawler-client.onrender.com" style="color: #2563eb;">MIKE.BOOKING</a> 
                     查看更多優惠！
                 </p>
                 

@@ -160,7 +160,7 @@ const FlashSaleDetail = () => {
                 <div className="fs-detail-wrapper">
                     <div className="fs-detail-banner-wrap">
                         <img
-                            src={"https://my-app-aoxz.onrender.com" + sale.bannerUrl}
+                            src={"https://pycrawler-w5we.onrender.com" + sale.bannerUrl}
                             className="fs-detail-banner"
                         />
                     </div>
