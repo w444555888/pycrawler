@@ -59,7 +59,7 @@ async def register(data: dict):
 
 
 
-async def login(data: dict):
+async def login(data: dict, response: Response):
     user = await User.find_one({
         "$or": [
             {"username": data["account"]},
