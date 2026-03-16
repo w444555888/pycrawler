@@ -1,19 +1,7 @@
 """
 定時任務調度器 - 用於定時發送電子報等任務
+1. 在 FastAPI 應用中背景執行
 
-可以使用以下幾種方式啟動定時任務：
-
-1. 使用 Python 的 APScheduler:
-   pip install apscheduler
-   然後運行這個文件
-
-2. 使用系統 cron job (Linux/Mac):
-   在 crontab 中添加：
-   0 9 * * * cd /path/to/project && python -m app.scheduler
-
-3. 使用 Windows 任務計劃程序
-
-4. 在 FastAPI 應用中背景執行
 """
 
 import asyncio
@@ -82,24 +70,3 @@ async def start_scheduler():
 async def stop_scheduler():
     """停止調度器（在 FastAPI 應用關閉時調用）"""
     task_scheduler.shutdown()
-
-
-def main():
-    """主函數 - 直接運行此文件時使用"""
-    async def run():
-        task_scheduler.start()
-        
-        logger.info("調度器正在運行... 按 Ctrl+C 停止")
-        try:
-            # 保持運行
-            while True:
-                await asyncio.sleep(1)
-        except KeyboardInterrupt:
-            logger.info("收到中斷信號，正在關閉...")
-            task_scheduler.shutdown()
-
-    asyncio.run(run())
-
-
-if __name__ == "__main__":
-    main()
