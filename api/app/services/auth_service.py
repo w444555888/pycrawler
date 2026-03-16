@@ -20,7 +20,7 @@ def set_token_cookie(token: str, max_age=7 * 24 * 60 * 60):
             "value": token,
             "httponly": True,
             "secure": os.getenv("NODE_ENV") == "production",
-            "samesite": "lax",
+            "samesite": "none" if os.getenv("NODE_ENV") == "production" else "lax",
             "max_age": max_age,
             "path": "/"
         }
