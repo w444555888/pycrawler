@@ -124,7 +124,7 @@ def success(
                     value=v.get("value", ""),
                     httponly=v.get("httponly", True),
                     secure=v.get("secure", os.getenv("NODE_ENV") == "production"),
-                    samesite=v.get("samesite", "lax"),
+                    samesite=v.get("samesite", "none" if os.getenv("NODE_ENV") == "production" else "lax"),
                     max_age=v.get("max_age", 7 * 24 * 60 * 60),
                     path=v.get("path", "/")
                 )
@@ -134,7 +134,7 @@ def success(
                     value=v,
                     httponly=True,
                     secure=os.getenv("NODE_ENV") == "production",
-                    samesite="lax",
+                    samesite="none" if os.getenv("NODE_ENV") == "production" else "lax",
                     max_age=7 * 24 * 60 * 60,
                     path="/"
                 )

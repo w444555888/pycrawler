@@ -19,9 +19,9 @@ async def route_register(request: Request):
 
 
 @router.post("/login")
-async def route_login(request: Request):
+async def route_login(request: Request, response: Response):
     data = await request.json()
-    return await login(data)
+    return await login(data, response)
 
 
 @router.post("/forgot-password")
