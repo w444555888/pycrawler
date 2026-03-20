@@ -1329,6 +1329,26 @@ files = [
 ]
 
 [[package]]
+name = "redis"
+version = "7.3.0"
+description = "Python client for Redis database and key-value store"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "redis-7.3.0-py3-none-any.whl", hash = "sha256:9d4fcb002a12a5e3c3fbe005d59c48a2cc231f87fbb2f6b70c2d89bb64fec364"},
+    {file = "redis-7.3.0.tar.gz", hash = "sha256:4d1b768aafcf41b01022410b3cc4f15a07d9b3d6fe0c66fc967da2c88e551034"},
+]
+
+[package.extras]
+circuit-breaker = ["pybreaker (>=1.4.0)"]
+hiredis = ["hiredis (>=3.2.0)"]
+jwt = ["pyjwt (>=2.9.0)"]
+ocsp = ["cryptography (>=36.0.1)", "pyopenssl (>=20.0.1)", "requests (>=2.31.0)"]
+otel = ["opentelemetry-api (>=1.39.1)", "opentelemetry-exporter-otlp-proto-http (>=1.39.1)", "opentelemetry-sdk (>=1.39.1)"]
+xxhash = ["xxhash (>=3.6.0,<3.7.0)"]
+
+[[package]]
 name = "rsa"
 version = "4.9.1"
 description = "Pure-Python RSA implementation"
@@ -1388,30 +1408,26 @@ full = ["httpx (>=0.27.0,<0.29.0)", "itsdangerous", "jinja2", "python-multipart 
 
 [[package]]
 name = "timezonefinder"
-version = "7.0.2"
+version = "8.2.1"
 description = "python package for finding the timezone of any point on earth (coordinates) offline"
 optional = false
-python-versions = "<4,>=3.9"
+python-versions = "<4,>=3.11"
 groups = ["main"]
 files = [
-    {file = "timezonefinder-7.0.2-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3f724490a8e87a9ba481595ae642d0610a051dfaf3508152166d4938b0c10324"},
-    {file = "timezonefinder-7.0.2-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:14a1570ec8750c1cf4b4a5bde450f62504eb29f30adb324e9f4cef6f462961c5"},
-    {file = "timezonefinder-7.0.2-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:94157de440164dbcb614ac252da0bab30d93e7c13b06dc8bcc33fe478b5aa9c6"},
-    {file = "timezonefinder-7.0.2-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:bff656cb62f09593b26170cea0ad8405339120e53b1ea1bba84eabaa285736c7"},
-    {file = "timezonefinder-7.0.2-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:85ea6f4c4ffcb6e16f631ab413b19a3183ca06f162e898ce8f8de54b093a2870"},
-    {file = "timezonefinder-7.0.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:5932bbc5aa15b84aa0d761dc29bab107ffd1a883dbab64fc40f8b28613080b0c"},
-    {file = "timezonefinder-7.0.2-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d5b01813de3022cb5631d02dcf418af0324191a12f93e9a3d4524cdaa0668ee5"},
-    {file = "timezonefinder-7.0.2-cp313-cp313-musllinux_1_1_x86_64.whl", hash = "sha256:540b2b34795857d99963eb0d1a2861608402dd78e486da334ba4fa49dfe03637"},
-    {file = "timezonefinder-7.0.2-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ff83fb392fa1544e0dc47696e85ef5091aff2308645058d991cbbbe800f98dbd"},
-    {file = "timezonefinder-7.0.2-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:7c5d24c75096a7791e6ed19aa32c64ec595d2eccabf1d8eba5a63e0eaccee722"},
-    {file = "timezonefinder-7.0.2.tar.gz", hash = "sha256:e93d1913f296666b9c50059b0c8c741b2e9d5a63e0bbe5162724b3504250f0b0"},
+    {file = "timezonefinder-8.2.1-cp39-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e0dcaa33de1a5dad33db1dd36bead831c19d1865f1dc8c2e14361734293e7727"},
+    {file = "timezonefinder-8.2.1-cp39-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:8d46d82c6a821086a36bf2f8c57c1501dd2cf82f54ea647aca3901d33564ccf5"},
+    {file = "timezonefinder-8.2.1.tar.gz", hash = "sha256:16a8418fc73651b5491af891cf23973b967525ab6f4c8111c27c90fc6e22112d"},
 ]
 
 [package.dependencies]
-cffi = ">=1.15.1,<2"
+cffi = ">=1.15.1,<3"
 flatbuffers = ">=25.2.10"
-h3 = ">4"
-numpy = {version = ">=1.23,<3", markers = "python_version >= \"3.9\""}
+h3 = ">=4"
+numpy = ">=2"
+
+[package.extras]
+numba = ["numba (>=0.56,<1)"]
+pytz = ["pytz (>=2022.7.1)"]
 
 [[package]]
 name = "typing-extensions"
@@ -1758,4 +1774,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4"
-content-hash = "24444c8018a22a62ff2712584fc9d3c26c3cd1756b29e7b127afb06f610dfac6"
+content-hash = "43f36448151dcb75c0bcb512d8c31f07bb640011fb377fccb09c369fb5a0c363"

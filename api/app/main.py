@@ -15,7 +15,7 @@ from app.routes import hotels, rooms, users, auth, order, flight, captcha, hotel
 from app.db import init_db
 from app.utils.error_handler import http_error_handler, validation_exception_handler
 from app.scheduler import start_scheduler, stop_scheduler
-
+from app.utils.redis_client import init_redis, close_redis
 app = FastAPI(title="Hotel Booking API")
 
 
@@ -31,12 +31,14 @@ Subscribe.model_rebuild()
 @app.on_event("startup")
 async def on_startup():
     await init_db()
+    await init_redis()  # 初始化 Redis
     await start_scheduler()  # 啟動定時任務調度器
 
 # 關閉時停止定時任務
 @app.on_event("shutdown")
 async def on_shutdown():
     await stop_scheduler()  # 停止定時任務調度器
+    await close_redis()  # 關閉 Redis 連接
 
 # 設定 CORS
 app.add_middleware(
