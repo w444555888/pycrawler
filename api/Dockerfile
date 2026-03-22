@@ -14,7 +14,7 @@ COPY pyproject.toml poetry.lock* ./
 
 # 安裝依賴（不要建立虛擬環境，直接安裝到全局）
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --only main 
+    && poetry install --only main --no-root
 
 # 複製程式碼
 COPY api /app
