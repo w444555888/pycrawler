@@ -1,6 +1,74 @@
 # 🚀 Docker + Redis 完整配置启动
 
-## 📍 当前配置
+
+# 🐳 Docker 常用指令
+功能模块	能做什么	端口
+API 服务	提供所有后端 API，支持 SwaggerUI 文档	8000
+MongoDB 数据库	存储所有预订数据 (用户、酒店、航班、订单)	27017
+Redis 缓存	提供 Redis 缓存服务	6379
+
+
+立即可访问
+✅ API 文档 → http://localhost:8000/docs
+✅ API 健康检测 → http://localhost:8000/
+
+现在前端还没启动，需要另外运行：
+
+Admin 管理后台: cd admin && npm start (端口 3000)
+Client 客户端: cd client && npm start (端口 3001)
+
+
+## 📋 Docker Compose 指令 (项目级别)
+
+### 启动和停止
+
+```powershell
+# 启动所有服务 (后台运行)
+docker compose up -d
+
+# 启动所有服务 (前台运行，可查看日志)
+docker compose up
+
+# 停止所有服务
+docker compose down
+
+# 重启所有服务
+docker compose restart
+
+# 重建镜像并重启
+docker compose up -d --build
+```
+
+
+### 查看状态
+
+```powershell
+# 查看所有运行中的容器
+docker compose ps
+
+# 查看详细状态 (包括端口映射)
+docker compose ps -a
+```
+
+### 日志管理
+
+```powershell
+# 查看所有服务日志
+docker compose logs
+
+# 实时查看 API 容器日志 (最常用！)
+docker compose logs -f pycrawler-api
+
+# 查看 Redis 容器日志
+docker compose logs -f pycrawler-redis
+
+# 查看 MongoDB 容器日志
+docker compose logs -f pycrawler-mongodb
+
+# 查看最近 100 行日志
+docker compose logs --tail 100
+```
+
 
 **完整的本地开发环境：**
 - 🟢 Redis (Docker)
@@ -9,50 +77,8 @@
 
 ---
 
-## ✅ 启动步骤（网络正常时）
 
-### 1️⃣ 确保在项目根目录
-
-```powershell
-cd C:\Users\mikeyu\Documents\GitHub\pycrawler
-```
-
-### 2️⃣ 启动所有服务
-
-```powershell
-docker compose up -d
-```
-
-等待完成，应该看到：
-```
-[+] up 3/3
- ✔ pycrawler-redis       Up
- ✔ pycrawler-mongodb     Up  
- ✔ pycrawler-api         Up
-```
-
-### 3️⃣ 验证所有服务
-
-```powershell
-docker compose ps
-```
-
-### 4️⃣ 访问应用
-
-- 🔌 **API 文档**: http://localhost:8000/docs
-- 📚 **Swagger UI**: http://localhost:8000/swagger
-
-### 5️⃣ 检查 Redis 连接
-
-```powershell
-docker exec -it pycrawler-redis redis-cli PING
-```
-
-应该返回：`PONG`
-
----
-
-## 📝 服务说明
+## 服务说明
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
@@ -62,61 +88,29 @@ docker exec -it pycrawler-redis redis-cli PING
 
 ---
 
-## 🧪 测试 Redis
+## Redis
 
 ### 进入 Redis 容器
 
-```powershell
-docker exec -it pycrawler-redis redis-cli
-```
 
-在 Redis 里执行：
-```
-PING                 # 返回 PONG
-DBSIZE              # 显示键数量
-KEYS *              # 列出所有键
-SET test "hello"    # 设置测试键
-GET test            # 获取测试键
-```
+## 日常工作流
 
-### 验证 Redis 连接（通过 API 日志）
-
-启动时应该看到：
-```
-✓ Redis 连接成功
-```
+| 场景 | 指令 |
+|------|------|
+| **启动开发环境** | `docker compose up -d` |
+| **查看 API 是否有错** | `docker compose logs -f pycrawler-api` |
+| **重启 API** | `docker compose restart pycrawler-api` |
+| **进入 API 容器调试** | `docker exec -it pycrawler-api /bin/bash` |
+| **检查 Redis 缓存** | `docker exec -it pycrawler-redis redis-cli` |
+| **清空 Redis 缓存** | `docker exec pycrawler-redis redis-cli FLUSHALL` |
+| **停止所有服务** | `docker compose down` |
+| **完整重启** | `docker compose down && docker compose up -d` |
 
 ---
 
-## 🛑 停止服务
 
-```powershell
-docker compose down
-```
 
----
 
-## 🔄 重启服务
-
-```powershell
-docker compose restart
-```
-
----
-
-## 📜 查看日志
-
-```powershell
-# 看所有日志
-docker compose logs -f
-
-# 看特定服务日志
-docker compose logs -f api
-docker compose logs -f redis
-docker compose logs -f mongodb
-```
-
----
 
 ## ❌ 故障排除
 
@@ -134,60 +128,15 @@ docker compose down
 docker compose up -d
 ```
 
-### 问：API 连不上 Redis？
 
-```powershell
-# 检查 Redis 是否运行
-docker compose ps
 
-# 重启 Redis
-docker compose restart redis
-
-# 查看 API 日志
-docker compose logs api
-```
-
-### 问：清空所有容器和数据？
-
-```powershell
-docker compose down -v
-```
-
----
-
-## 🎯 使用 Redis 示例
-
-在你的 route 里添加缓存：
-
-```python
-from app.utils.redis_client import get_cache, set_cache
-
-@router.get("/hotels")
-async def get_all_hotels():
-    # 尝试从 Redis 获取
-    cached = await get_cache("hotels:list")
-    if cached:
-        return {"source": "cache", "data": cached}
-    
-    # 从数据库获取
-    hotels = await Hotel.find_all().to_list()
-    result = [h.model_dump() for h in hotels]
-    
-    # 保存到 Redis（1 小时过期）
-    await set_cache("hotels:list", result, expire=3600)
-    
-    return {"source": "database", "data": result}
-```
-
----
-
-## 📋 文件结构
+## 文件结构
 
 ```
 pycrawler/
 ├── docker-compose.yml       # 容器编排配置
 ├── pyproject.toml           # Python 依赖
-├── poetry.lock              # 依赖锁文件
+├── poetry.lock              # 依赖锁文件(下指令本地更新 poetry.lock)
 ├── api/
 │   ├── Dockerfile           # API 镜像配置
 │   ├── app/
@@ -198,7 +147,5 @@ pycrawler/
 └── ...
 ```
 
----
 
-祝你学习愉快！🚀
 
