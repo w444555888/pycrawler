@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db import get_session
 from app.services.flight_service import (
     search_flights,
     search_locations,
@@ -59,27 +61,28 @@ async def route_search_flights(
 # ----------- Flight Order 訂單 -----------
 
 @router.post("/order")
-async def route_create_order(payload: dict, current_user=Depends(verify_token)):
-    return await create_flight_order(payload, current_user["id"])
+async def route_create_order(request: Request, current_user=Depends(verify_token), session: AsyncSession = Depends(get_session)):
+    payload = await request.json()
+    return await create_flight_order(payload, current_user["id"], session)
 
 
 @router.get("/orders/user")
-async def route_get_orders_by_user(current_user=Depends(verify_token)):
-    return await get_user_orders(current_user["id"])
+async def route_get_orders_by_user(current_user=Depends(verify_token), session: AsyncSession = Depends(get_session)):
+    return await get_user_orders(current_user["id"], session)
 
 
 @router.get("/orders/{order_id}")
-async def route_get_order_detail_by_id(order_id: str):
-    return await get_order_detail(order_id)
+async def route_get_order_detail_by_id(order_id: int, session: AsyncSession = Depends(get_session)):
+    return await get_order_detail(order_id, session)
 
 
 @router.post("/orders/{order_id}/cancel")
-async def route_cancel_order_by_id(order_id: str, current_user=Depends(verify_token)):
-    return await cancel_order(order_id, current_user["id"], current_user.get("isAdmin", False))
+async def route_cancel_order_by_id(order_id: int, current_user=Depends(verify_token), session: AsyncSession = Depends(get_session)):
+    return await cancel_order(order_id, current_user["id"], current_user.get("isAdmin", False), session)
 
 
 # ----------- Admin -----------
 
 @router.get("/orders")
-async def route_get_all_orders():
-    return await get_all_flight_orders()
+async def route_get_all_orders(session: AsyncSession = Depends(get_session)):
+    return await get_all_flight_orders(session)

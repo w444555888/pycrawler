@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Request, Response, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db import get_session
 from app.services.auth_service import (
     register,
     login,
@@ -13,28 +15,28 @@ router = APIRouter(tags=["auth"])
 
 
 @router.post("/register")
-async def route_register(request: Request):
+async def route_register(request: Request, session: AsyncSession = Depends(get_session)):
     data = await request.json()
-    return await register(data)
+    return await register(data, session)
 
 
 @router.post("/login")
-async def route_login(request: Request, response: Response):
+async def route_login(request: Request, response: Response, session: AsyncSession = Depends(get_session)):
     data = await request.json()
-    return await login(data, response)
+    return await login(data, response, session)
 
 
 @router.post("/forgot-password")
-async def route_forgot_password(request: Request):
+async def route_forgot_password(request: Request, session: AsyncSession = Depends(get_session)):
     data = await request.json()
-    return await forgot_password(data)
+    return await forgot_password(data, session)
 
 
 @router.post("/reset-password/{token}")
-async def route_reset_password(token: str, request: Request):
+async def route_reset_password(token: str, request: Request, session: AsyncSession = Depends(get_session)):
     data = await request.json()
     new_password = data.get("password") 
-    return await reset_password(token, new_password)
+    return await reset_password(token, new_password, session)
 
 
 @router.get("/me")

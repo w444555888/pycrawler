@@ -2,6 +2,8 @@ from fastapi import HTTPException
 from datetime import datetime, timezone
 from typing import Dict, Optional, List
 import uuid
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
 
 from app.services.amadeus_service import AmadeusService
 from app.models.real_flight_orders import RealFlightOrders
@@ -241,7 +243,7 @@ async def search_flights(origin, destination, date, returnDate=None, page: int =
 
 
 # 建立飛行訂單
-async def create_flight_order(payload: Dict, user_id: str):
+async def create_flight_order(payload: Dict, user_id: int, session: AsyncSession):
     """
     建立新的飛行訂單
     payload 格式: {
@@ -269,7 +271,7 @@ async def create_flight_order(payload: Dict, user_id: str):
 
         # 建立訂單物件
         flight_order = RealFlightOrders(
-            user_id=PydanticObjectId(user_id),
+            user_id=user_id,
             order_number=order_number,
             flight_info=flight_info,
             passenger_info=passenger_info,
@@ -280,9 +282,22 @@ async def create_flight_order(payload: Dict, user_id: str):
             updated_at=datetime.now(timezone.utc)
         )
 
-        await flight_order.insert()
-        result = flight_order.model_dump(by_alias=True, exclude_none=True)
-        result["userId"] = str(flight_order.user_id)
+        session.add(flight_order)
+        await session.commit()
+        await session.refresh(flight_order)
+        
+        result = {
+            "id": flight_order.id,
+            "userId": flight_order.user_id,
+            "orderNumber": flight_order.order_number,
+            "flightInfo": flight_order.flight_info,
+            "passengerInfo": flight_order.passenger_info,
+            "category": flight_order.category,
+            "price": flight_order.price,
+            "status": flight_order.status,
+            "createdAt": flight_order.created_at,
+            "updatedAt": flight_order.updated_at
+        }
         return success(data=result, status=201)
 
     except Exception as e:
@@ -290,19 +305,30 @@ async def create_flight_order(payload: Dict, user_id: str):
 
 
 # 取得使用者的所有訂單
-async def get_user_orders(user_id: str):
+async def get_user_orders(user_id: int, session: AsyncSession):
     """
     取得特定使用者的所有飛行訂單
     """
     try:
-        user_oid = PydanticObjectId(user_id)
-        orders = await RealFlightOrders.find(RealFlightOrders.user_id == user_oid).to_list()
+        stmt = select(RealFlightOrders).where(RealFlightOrders.user_id == user_id)
+        result_query = await session.execute(stmt)
+        orders = result_query.scalars().all()
 
         result = []
         for order in orders:
-            data = order.model_dump(by_alias=True, exclude_none=True)
-            data["userId"] = str(order.user_id)
-            data["id"] = str(order.id)
+            data = {
+                "id": order.id,
+                "userId": order.user_id,
+                "orderNumber": order.order_number,
+                "flightInfo": order.flight_info,
+                "passengerInfo": order.passenger_info,
+                "category": order.category,
+                "price": order.price,
+                "status": order.status,
+                "paymentInfo": order.payment_info,
+                "createdAt": order.created_at,
+                "updatedAt": order.updated_at
+            }
             result.append(data)
 
         return success(data=result)
@@ -312,73 +338,108 @@ async def get_user_orders(user_id: str):
 
 
 # 取得單一訂單詳情
-async def get_order_detail(order_id: str):
+async def get_order_detail(order_id: int, session: AsyncSession):
     """
     取得單一飛行訂單的詳細資訊
     """
     try:
-        oid = PydanticObjectId(order_id)
-    except Exception:
-        raise_error(400, "訂單 id 格式不正確")
+        stmt = select(RealFlightOrders).where(RealFlightOrders.id == order_id)
+        result_query = await session.execute(stmt)
+        order = result_query.scalar_one_or_none()
+        
+        if not order:
+            raise_error(404, "訂單找不到")
 
-    order = await RealFlightOrders.get(oid)
-    if not order:
-        raise_error(404, "訂單找不到")
-
-    result = order.model_dump(by_alias=True, exclude_none=True)
-    result["userId"] = str(order.user_id)
-    result["id"] = str(order.id)
-    return success(data=result)
+        result = {
+            "id": order.id,
+            "userId": order.user_id,
+            "orderNumber": order.order_number,
+            "flightInfo": order.flight_info,
+            "passengerInfo": order.passenger_info,
+            "category": order.category,
+            "price": order.price,
+            "status": order.status,
+            "paymentInfo": order.payment_info,
+            "createdAt": order.created_at,
+            "updatedAt": order.updated_at
+        }
+        return success(data=result)
+    
+    except Exception as e:
+        raise_error(400, str(e))
 
 
 # 取消訂單
-async def cancel_order(order_id: str, user_id: str, is_admin: bool):
+async def cancel_order(order_id: int, user_id: int, is_admin: bool, session: AsyncSession):
     """
     取消飛行訂單
     只有訂單所有者或管理員可以取消訂單
     """
     try:
-        oid = PydanticObjectId(order_id)
-        user_oid = PydanticObjectId(user_id)
-    except Exception:
-        raise_error(400, "id 格式不正確")
+        stmt = select(RealFlightOrders).where(RealFlightOrders.id == order_id)
+        result_query = await session.execute(stmt)
+        order = result_query.scalar_one_or_none()
+        
+        if not order:
+            raise_error(404, "訂單找不到")
 
-    order = await RealFlightOrders.get(oid)
-    if not order:
-        raise_error(404, "訂單找不到")
+        # 驗證權限: 必須是訂單所有者或管理員
+        if order.user_id != user_id and not is_admin:
+            raise_error(403, "無權限取消此訂單")
 
-    # 驗證權限: 必須是訂單所有者或管理員
-    if order.user_id != user_oid and not is_admin:
-        raise_error(403, "無權限取消此訂單")
+        # 若已支付或已完成不能取消
+        if order.status in ["PAID", "COMPLETED"]:
+            raise_error(400, f"無法取消狀態為 {order.status} 的訂單")
 
-    # 若已支付或已完成不能取消
-    if order.status in ["PAID", "COMPLETED"]:
-        raise_error(400, f"無法取消狀態為 {order.status} 的訂單")
+        # 更新訂單狀態與時間戳
+        order.status = "CANCELLED"
+        order.updated_at = datetime.now(timezone.utc)
+        await session.commit()
 
-    # 更新訂單狀態與時間戳
-    order.status = "CANCELLED"
-    order.updated_at = datetime.now(timezone.utc)
-    await order.save()
-
-    result = order.model_dump(by_alias=True, exclude_none=True)
-    result["userId"] = str(order.user_id)
-    result["id"] = str(order.id)
-    return success(data=result)
+        result = {
+            "id": order.id,
+            "userId": order.user_id,
+            "orderNumber": order.order_number,
+            "flightInfo": order.flight_info,
+            "passengerInfo": order.passenger_info,
+            "category": order.category,
+            "price": order.price,
+            "status": order.status,
+            "paymentInfo": order.payment_info,
+            "createdAt": order.created_at,
+            "updatedAt": order.updated_at
+        }
+        return success(data=result)
+        
+    except Exception as e:
+        raise_error(400, str(e))
 
 
 # 取得所有飛行訂單 (管理者用)
-async def get_all_flight_orders():
+async def get_all_flight_orders(session: AsyncSession):
     """
     取得所有飛行訂單 (管理員功能)
     """
     try:
-        orders = await RealFlightOrders.find_all().to_list()
+        stmt = select(RealFlightOrders)
+        result_query = await session.execute(stmt)
+        orders = result_query.scalars().all()
 
         result = []
         for order in orders:
-            data = order.model_dump(by_alias=True, exclude_none=True)
-            data["userId"] = str(order.user_id)
-            data["id"] = str(order.id)
+            data = {
+                "id": order.id,
+                "userId": order.user_id,
+                "orderNumber": order.order_number,
+                "flightInfo": order.flight_info,
+                "passengerInfo": order.passenger_info,
+                "category": order.category,
+                "price": order.price,
+                "status": order.status,
+                "paymentInfo": order.payment_info,
+                "createdAt": order.created_at,
+                "updatedAt": order.updated_at
+            }
             result.append(data)
 
         return success(data=result)

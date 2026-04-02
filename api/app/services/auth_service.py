@@ -1,4 +1,6 @@
 from fastapi import HTTPException, Request, Response
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, or_
 from app.models.user import User
 from app.utils.email_service import send_reset_email
 from app.utils.response import success
@@ -41,31 +43,37 @@ def generate_token(user):
     return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
 
-async def register(data: dict):
-    exists = await User.find_one({
-        "$or": [
-            {"username": data["username"]},
-            {"email": data["email"]}
-        ]
-    })
+async def register(data: dict, session: AsyncSession):
+    # 检查用户是否已存在
+    stmt = select(User).where(
+        or_(User.username == data["username"], User.email == data["email"])
+    )
+    result = await session.execute(stmt)
+    exists = result.scalar_one_or_none()
 
     if exists:
         raise_error(400, "此帳號或信箱已被註冊")
     
     hashed_pwd = bcrypt.hash(data["password"])
-    user = User(username=data["username"], email=data["email"], password=hashed_pwd)
-    await user.insert()
+    user = User(
+        username=data["username"], 
+        email=data["email"], 
+        password=hashed_pwd,
+        is_admin=data.get("isAdmin", False)
+    )
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
     return success(data=user, message="註冊成功", exclude_fields=["password"])
 
 
-
-async def login(data: dict, response: Response):
-    user = await User.find_one({
-        "$or": [
-            {"username": data["account"]},
-            {"email": data["account"]}
-        ]
-    })
+async def login(data: dict, response: Response, session: AsyncSession):
+    # 查找用户
+    stmt = select(User).where(
+        or_(User.username == data["account"], User.email == data["account"])
+    )
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
 
     if not user:
         raise_error(404, "沒有此使用者")
@@ -83,33 +91,38 @@ async def login(data: dict, response: Response):
     )
 
 
-async def forgot_password(data: dict):
-    user = await User.find_one(User.email == data["email"])
+async def forgot_password(data: dict, session: AsyncSession):
+    stmt = select(User).where(User.email == data["email"])
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
+    
     if not user:
         raise_error(404, "沒有此信箱的使用者")
     
     token = secrets.token_hex(16)
-    user.resetPasswordToken = token
-    user.resetPasswordExpires = datetime.now(timezone.utc) + timedelta(hours=1)
-    await user.save()
+    user.reset_password_token = token
+    user.reset_password_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+    await session.commit()
 
     await send_reset_email(user.email, token)
     return success(message="重置密碼郵件已發送")
 
 
-async def reset_password(token: str, new_password: str):
-    user = await User.find_one({
-        "resetPasswordToken": token,
-        "resetPasswordExpires": {"$gt": datetime.now(timezone.utc)}
-    })
+async def reset_password(token: str, new_password: str, session: AsyncSession):
+    stmt = select(User).where(
+        User.reset_password_token == token,
+        User.reset_password_expires > datetime.now(timezone.utc)
+    )
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
 
     if not user:
         raise_error(404, "重置令牌無效或已過期")
 
     user.password = bcrypt.hash(new_password)
-    user.resetPasswordToken = None
-    user.resetPasswordExpires = None
-    await user.save()
+    user.reset_password_token = None
+    user.reset_password_expires = None
+    await session.commit()
     return success(message="密碼重置成功")
 
 

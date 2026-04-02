@@ -74,7 +74,7 @@ def success(
         }
 
     說明:
-        - 若 data 是 Pydantic/Beanie 物件，會自動呼叫 `.model_dump()` 並套用 alias。
+        - 若 data 是 Pydantic 物件，會自動呼叫 `.model_dump()` 並套用 alias。
         - 若 data 是 list，會逐項處理並轉換為 dict。
         - 若 data 是 None，回傳的 data 會是空物件 {}。
         - exclude_fields 可用於移除敏感欄位（如 "password"）。

@@ -3,8 +3,8 @@
 
 # 🐳 Docker 常用指令
 功能模块	能做什么	端口
-API 服务	提供所有后端 API，支持 SwaggerUI 文档	8000
-MongoDB 数据库	存储所有预订数据 (用户、酒店、航班、订单)	27017
+API 服務	提供所有后端 API，支持 SwaggerUI 文档	8000
+Supabase PostgreSQL	云数据库存储所有预订数据 (用户、酒店、航班、订单)	5432
 Redis 缓存	提供 Redis 缓存服务	6379
 
 
@@ -62,8 +62,8 @@ docker compose logs -f pycrawler-api
 # 查看 Redis 容器日志
 docker compose logs -f pycrawler-redis
 
-# 查看 MongoDB 容器日志
-docker compose logs -f pycrawler-mongodb
+# 查看 API 容器日志
+docker compose logs -f pycrawler-api
 
 # 查看最近 100 行日志
 docker compose logs --tail 100
@@ -72,7 +72,7 @@ docker compose logs --tail 100
 
 **完整的本地开发环境：**
 - 🟢 Redis (Docker)
-- 🟡 MongoDB (Docker)
+- � Supabase PostgreSQL (云数据库)
 - 🔵 FastAPI (Docker)
 
 ---
@@ -83,7 +83,7 @@ docker compose logs --tail 100
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | Redis | 6379 | 缓存和会话 |
-| MongoDB | 27017 | 数据库 |
+| Supabase PostgreSQL | 5432 | 云数据库 |
 | API | 8000 | FastAPI 应用 |
 
 ---

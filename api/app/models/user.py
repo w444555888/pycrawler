@@ -14,7 +14,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password: Mapped[str] = mapped_column(String(255), nullable=False)  # hashed password
-    is_admin: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     
     address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
@@ -25,19 +25,19 @@ class User(Base):
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
+        default=lambda: datetime.now(), 
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(), 
+        onupdate=lambda: datetime.now(),
         nullable=False
     )
 
     def update_timestamp(self):
         """手动更新时间戳"""
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now()
 
 
 # Pydantic 模型用于 API 序列化

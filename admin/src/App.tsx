@@ -62,32 +62,32 @@ function App() {
 
   useEffect(() => {
     // 新訂單通知
-    socket.on("new-order", (data: any) => {
-      api.info({
-        message: "新訂單通知",
-        description: (
-          <div>
-            <div>
-              <strong>客戶：</strong>
-              {data.userName}
-            </div>
-            <div>
-              <strong>飯店：</strong>
-              {data.hotelId}
-            </div>
-            <div>
-              <strong>總金額：</strong>${data.totalPrice}
-            </div>
-          </div>
-        ),
-        placement: "topRight",
-        duration: 5,
-      });
-    });
+    // socket.on("new-order", (data: any) => {
+    //   api.info({
+    //     message: "新訂單通知",
+    //     description: (
+    //       <div>
+    //         <div>
+    //           <strong>客戶：</strong>
+    //           {data.userName}
+    //         </div>
+    //         <div>
+    //           <strong>飯店：</strong>
+    //           {data.hotelId}
+    //         </div>
+    //         <div>
+    //           <strong>總金額：</strong>${data.totalPrice}
+    //         </div>
+    //       </div>
+    //     ),
+    //     placement: "topRight",
+    //     duration: 5,
+    //   });
+    // });
 
-    return () => {
-      socket.off("new-order");
-    };
+    // return () => {
+    //   socket.off("new-order");
+    // };
   }, [api]);
 
   return (

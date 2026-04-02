@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from datetime import datetime, timezone, timedelta
-
-from datetime import datetime, timezone
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.models.room_inventory import RoomInventory
 from app.models.room import Room
 from app.models.hotel import Hotel
@@ -15,67 +15,96 @@ SERVICE_FEE_RATE = 0.10
 
 
 # 取得全部訂單
-async def list_orders():
-    orders = await Order.find_all().to_list()
+async def list_orders(session: AsyncSession):
+    stmt = select(Order)
+    order_result = await session.execute(stmt)
+    orders = order_result.scalars().all()
+    
     result = []
-
-    for o in orders:
-        hotel_id = ""
-        hotel_name = ""
-        room_id = ""
-        room_title = ""
-
-        if isinstance(o.hotel_id, Link):
-            hotel_id = str(o.hotel_id.ref.id)
-        else:
-            hotel_id = str(o.hotel_id)
-
-        if hotel_id:
-            hotel = await Hotel.get(hotel_id)
-            if hotel:
-                hotel_name = hotel.name
-
-        if isinstance(o.room_id, Link):
-            room_id = str(o.room_id.ref.id)
-        else:
-            room_id = str(o.room_id)
-
-        if room_id:
-            room = await Room.get(room_id)
-            if room:
-                room_title = room.title
-
-        data = o.model_dump(by_alias=True, exclude_none=True)
-        data["userId"] = str(o.user_id)
-        data["hotelId"] = hotel_id
-        data["hotelName"] = hotel_name
-        data["roomId"] = room_id
-        data["roomTitle"] = room_title
-        result.append(data)
-
+    for order in orders:
+        # 查找相關飯店和房间信息
+        hotel = None
+        room = None
+        
+        if order.hotel_id:
+            hotel_stmt = select(Hotel).where(Hotel.id == order.hotel_id)
+            hotel_result = await session.execute(hotel_stmt)
+            hotel = hotel_result.scalar_one_or_none()
+            
+        if order.room_id:
+            room_stmt = select(Room).where(Room.id == order.room_id)
+            room_result = await session.execute(room_stmt)
+            room = room_result.scalar_one_or_none()
+        
+        order_data = {
+            "id": order.id,
+            "userId": order.user_id,
+            "hotelId": order.hotel_id,
+            "roomId": order.room_id,
+            "hotelName": hotel.name if hotel else "",
+            "roomTitle": room.title if room else "",
+            "checkInDate": order.check_in_date,
+            "checkOutDate": order.check_out_date,
+            "guests": order.guests,
+            "totalAmount": order.total_amount,
+            "status": order.status,
+            "customerInfo": order.customer_info,
+            "paymentInfo": order.payment_info,
+            "createdAt": order.created_at,
+            "updatedAt": order.updated_at
+        }
+        result.append(order_data)
+    
     return success(data=result)
 
 
-
-
-
 # 根據 ID 取得單一訂單（含 hotel、room）
-async def get_order(order_id: str):
-    try:
-        oid = PydanticObjectId(order_id)
-    except Exception:
-        raise_error(400, "訂單 id 格式不正確")
-
-    order = await Order.get(oid, fetch_links=True)  # ← 等同兩個 populate
+async def get_order(order_id: int, session: AsyncSession):
+    stmt = select(Order).where(Order.id == order_id)
+    order_result = await session.execute(stmt)
+    order = order_result.scalar_one_or_none()
+    
     if not order:
         raise_error(404, "訂單找不到")
-
-    return success(data=order)
+    
+    # 查找相關的酒店和房間信息
+    hotel = None
+    room = None
+    
+    if order.hotel_id:
+        hotel_stmt = select(Hotel).where(Hotel.id == order.hotel_id)
+        hotel_result = await session.execute(hotel_stmt)
+        hotel = hotel_result.scalar_one_or_none()
+        
+    if order.room_id:
+        room_stmt = select(Room).where(Room.id == order.room_id)
+        room_result = await session.execute(room_stmt)
+        room = room_result.scalar_one_or_none()
+    
+    order_data = {
+        "id": order.id,
+        "userId": order.user_id,
+        "hotelId": order.hotel_id,
+        "roomId": order.room_id,
+        "hotelName": hotel.name if hotel else "",
+        "roomTitle": room.title if room else "",
+        "checkInDate": order.check_in_date,
+        "checkOutDate": order.check_out_date,
+        "guests": order.guests,
+        "totalAmount": order.total_amount,
+        "status": order.status,
+        "customerInfo": order.customer_info,
+        "paymentInfo": order.payment_info,
+        "createdAt": order.created_at,
+        "updatedAt": order.updated_at
+    }
+    
+    return success(data=order_data)
 
 
 
 # 新訂單（含庫存檢查與手續費計算）
-async def create_order(data: Dict, current_user: User):
+async def create_order(data: Dict, current_user: dict, session: AsyncSession):
     hotel_id = data.get("hotelId")
     room_id = data.get("roomId")
     total_price = data.get("totalPrice")
@@ -96,8 +125,14 @@ async def create_order(data: Dict, current_user: User):
         raise_error(400, "退房日必須晚於入住日")
 
     # 驗證飯店與房型存在
-    hotel = await Hotel.get(ObjectId(hotel_id))
-    room = await Room.get(ObjectId(room_id))
+    hotel_stmt = select(Hotel).where(Hotel.id == hotel_id)
+    hotel_result = await session.execute(hotel_stmt)
+    hotel = hotel_result.scalar_one_or_none()
+    
+    room_stmt = select(Room).where(Room.id == room_id)
+    room_result = await session.execute(room_stmt)
+    room = room_result.scalar_one_or_none()
+    
     if not hotel:
         raise_error(404, "找不到飯店")
     if not room:
@@ -110,59 +145,93 @@ async def create_order(data: Dict, current_user: User):
         stay_dates.append(current_day)
         current_day += timedelta(days=1)
 
-    # 檢查庫存
-    inventories = await RoomInventory.find({
-        "roomId": ObjectId(room_id),
-        "date": {"$in": stay_dates}
-    }).to_list()
-
-    insufficient = next((inv for inv in inventories if inv.booked_rooms >= inv.total_rooms), None)
-    if insufficient:
-        raise_error(400, f"日期 {insufficient.date} 庫存不足")
+    # 檢查庫存 - 簡化版本
+    for d in stay_dates:
+        existing_stmt = select(RoomInventory).where(
+            RoomInventory.room_id == room_id,
+            RoomInventory.date == d
+        )
+        existing_result = await session.execute(existing_stmt)
+        existing = existing_result.scalar_one_or_none()
+        
+        if existing and existing.booked_rooms >= existing.total_rooms:
+            raise_error(400, f"日期 {d} 庫存不足")
 
     # 扣除庫存
     for d in stay_dates:
-        existing = await RoomInventory.find_one(
-            RoomInventory.room_id == ObjectId(room_id),
+        existing_stmt = select(RoomInventory).where(
+            RoomInventory.room_id == room_id,
             RoomInventory.date == d
         )
+        existing_result = await session.execute(existing_stmt)
+        existing = existing_result.scalar_one_or_none()
+        
         if existing:
             existing.booked_rooms += 1
-            existing.update_timestamp()
-            await existing.save()
+            existing.updated_at = datetime.now(timezone.utc)
         else:
             new_inv = RoomInventory(
-                room_id=ObjectId(room_id),
+                room_id=room_id,
                 date=d,
-                total_rooms=room.total_rooms if hasattr(room, "total_rooms") else 1,
-                booked_rooms=1
+                total_rooms=1,  # 預設值
+                booked_rooms=1,
+                remaining_rooms=0,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
             )
-            await new_inv.insert()
+            session.add(new_inv)
 
     # 計算手續費
     service_fee = total_price * SERVICE_FEE_RATE
     total_price_with_fee = total_price + service_fee
 
-    # 刪掉舊的 totalPrice，避免重複
-    data.pop("totalPrice", None)
-
     # 建立訂單
     order = Order(
-        **data,
-        userId=str(current_user["id"]),
-        totalPrice=total_price_with_fee,
-        createdAt=datetime.now(timezone.utc)
+        user_id=current_user["id"],
+        hotel_id=hotel_id,
+        room_id=room_id,
+        check_in_date=check_in,
+        check_out_date=check_out,
+        guests=data.get("guests", 1),
+        total_amount=total_price_with_fee,
+        status=data.get("status", "pending"),
+        customer_info=data.get("customerInfo", {}),
+        payment_info=data.get("paymentInfo", {}),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
     )
-    await order.insert()
+    session.add(order)
+    await session.commit()
+    await session.refresh(order)
 
     print(f"新訂單建立成功: room={room.title}, 價格含手續費={total_price_with_fee}")
-    return success(data=order, status=201)
+    
+    order_data = {
+        "id": order.id,
+        "userId": order.user_id,
+        "hotelId": order.hotel_id,
+        "roomId": order.room_id,
+        "checkInDate": order.check_in_date,
+        "checkOutDate": order.check_out_date,
+        "guests": order.guests,
+        "totalAmount": order.total_amount,
+        "status": order.status,
+        "customerInfo": order.customer_info,
+        "paymentInfo": order.payment_info,
+        "createdAt": order.created_at,
+        "updatedAt": order.updated_at
+    }
+    
+    return success(data=order_data, status=201)
 
 
 
 # 更新訂單（by id）
-async def update_order(order_id: str, data: Dict):
-    order = await Order.get(order_id)
+async def update_order(order_id: int, data: Dict, session: AsyncSession):
+    stmt = select(Order).where(Order.id == order_id)
+    order_result = await session.execute(stmt)
+    order = order_result.scalar_one_or_none()
+    
     if not order:
         raise_error(404, "訂單不存在")
 
@@ -175,14 +244,36 @@ async def update_order(order_id: str, data: Dict):
         raise_error(400, "無效的訂單狀態")
 
     order.status = status
-    await order.save()
-    return success(data=order)
+    order.updated_at = datetime.now(timezone.utc)
+    await session.commit()
+    await session.refresh(order)
+    
+    order_data = {
+        "id": order.id,
+        "userId": order.user_id,
+        "hotelId": order.hotel_id,
+        "roomId": order.room_id,
+        "checkInDate": order.check_in_date,
+        "checkOutDate": order.check_out_date,
+        "guests": order.guests,
+        "totalAmount": order.total_amount,
+        "status": order.status,
+        "customerInfo": order.customer_info,
+        "paymentInfo": order.payment_info,
+        "createdAt": order.created_at,
+        "updatedAt": order.updated_at
+    }
+    
+    return success(data=order_data)
 
 
 
 # 刪除訂單（釋放庫存）
-async def delete_order(order_id: str):
-    order = await Order.get(order_id)
+async def delete_order(order_id: int, session: AsyncSession):
+    stmt = select(Order).where(Order.id == order_id)
+    order_result = await session.execute(stmt)
+    order = order_result.scalar_one_or_none()
+    
     if not order:
         raise_error(404, "訂單不存在")
 
@@ -190,25 +281,40 @@ async def delete_order(order_id: str):
     check_in = order.check_in_date
     check_out = order.check_out_date
 
-    await order.delete()
+    await session.delete(order)
+    await session.commit()
 
+    # 释放庫存
     if room_id and check_in and check_out:
         try:
-            start = datetime.strptime(check_in, "%Y-%m-%d").date()
-            end = datetime.strptime(check_out, "%Y-%m-%d").date()
+            if isinstance(check_in, str):
+                start = datetime.strptime(check_in, "%Y-%m-%d").date()
+            else:
+                start = check_in
+                
+            if isinstance(check_out, str):
+                end = datetime.strptime(check_out, "%Y-%m-%d").date()
+            else:
+                end = check_out
 
             current_day = start
             while current_day < end:
-                existing = await RoomInventory.find_one(
-                    RoomInventory.room_id == ObjectId(room_id),
+                existing_stmt = select(RoomInventory).where(
+                    RoomInventory.room_id == room_id,
                     RoomInventory.date == current_day
                 )
+                existing_result = await session.execute(existing_stmt)
+                existing = existing_result.scalar_one_or_none()
+                
                 if existing:
                     existing.booked_rooms = max(0, existing.booked_rooms - 1)
-                    await existing.save()
+                    existing.remaining_rooms = existing.total_rooms - existing.booked_rooms
+                    existing.updated_at = datetime.now(timezone.utc)
+                    
                 current_day += timedelta(days=1)
-
-            print(f"已釋放庫存：roomId={room_id} from {check_in} to {check_out}")
+                
+            await session.commit()
+            print(f"已釋放庫存：roomId={room_id} from {start} to {end}")
 
         except Exception as e:
             print(f"釋放庫存時發生錯誤: {e}")

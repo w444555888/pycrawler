@@ -13,7 +13,7 @@ class Base(DeclarativeBase):
 # 创建异步数据库引擎
 engine = create_async_engine(
     settings.database_url,
-    echo=False,  # 关闭 SQL 语句打印，减少日志输出
+    echo=True,  # 开发模式下打印 SQL 语句
     pool_pre_ping=True,  # 连接池健康检查
     pool_recycle=3600,  # 连接回收时间
     pool_size=20,  # 连接池大小
