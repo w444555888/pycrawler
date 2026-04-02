@@ -1,6 +1,6 @@
 from typing import Optional
-from beanie import PydanticObjectId
-from bson import ObjectId
+
+
 from datetime import datetime, timezone
 from app.models.room_inventory import RoomInventory
 from app.models.room import Room

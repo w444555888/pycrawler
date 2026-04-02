@@ -1,5 +1,5 @@
 from typing import List
-from beanie import PydanticObjectId
+
 from app.models.subscribe import Subscribe
 from app.utils.response import success
 from app.utils.error_handler import raise_error

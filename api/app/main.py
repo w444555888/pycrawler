@@ -6,39 +6,27 @@ from fastapi.responses import JSONResponse
 import logging
 
 from app.core.config import settings
-from app.models.hotel import Hotel
-from app.models.room import Room
-from app.models.order import Order
-from app.models.hotel_flash_sale import HotelFlashSale, HotelFlashSaleInventory, HotelFlashSaleOrder
-from app.models.subscribe import Subscribe
 from app.routes import hotels, rooms, users, auth, order, flight, captcha, hotel_flash_sale, subscribe
 from app.db import init_db
 from app.utils.error_handler import http_error_handler, validation_exception_handler
 from app.scheduler import start_scheduler, stop_scheduler
 from app.utils.redis_client import init_redis, close_redis
+
 app = FastAPI(title="Hotel Booking API")
 
-
-Hotel.model_rebuild()
-Room.model_rebuild()
-Order.model_rebuild()
-HotelFlashSale.model_rebuild()
-HotelFlashSaleInventory.model_rebuild()
-HotelFlashSaleOrder.model_rebuild()
-Subscribe.model_rebuild()
-
-# 啟動時初始化 DB 和定時任務
+# 启动时初始化数据库和定时任务
 @app.on_event("startup")
 async def on_startup():
     await init_db()
-    await init_redis()  # 初始化 Redis
-    await start_scheduler()  # 啟動定時任務調度器
+    # 暂时禁用 Redis
+    # await init_redis()  # 初始化 Redis
+    await start_scheduler()  # 启动定时任务调度器
 
-# 關閉時停止定時任務
+# 关闭时停止定时任务
 @app.on_event("shutdown")
 async def on_shutdown():
-    await stop_scheduler()  # 停止定時任務調度器
-    await close_redis()  # 關閉 Redis 連接
+    await stop_scheduler()  # 停止定时任务调度器
+    # await close_redis()  # 关闭 Redis 连接
 
 # 設定 CORS
 app.add_middleware(

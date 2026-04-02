@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.user_service import (
     get_all_users,
     get_user,
@@ -6,26 +7,42 @@ from app.services.user_service import (
     delete_user
 )
 from app.services.auth_service import verify_token
-from app.models.user import User
+from app.db import get_session
 
 router = APIRouter(tags=["users"])
 
-#全部用戶資料
+# 全部用户资料
 @router.get("")
-async def route_get_all_users(current_user: User = Depends(verify_token)):
-    return await get_all_users(current_user)
+async def route_get_all_users(
+    current_user: dict = Depends(verify_token),
+    session: AsyncSession = Depends(get_session)
+):
+    return await get_all_users(current_user, session)
 
-#單一用戶資料
+# 单一用户资料
 @router.get("/{user_id}")
-async def route_get_user(user_id: str, current_user: User = Depends(verify_token)):
-    return await get_user(user_id, current_user)
+async def route_get_user(
+    user_id: int, 
+    current_user: dict = Depends(verify_token),
+    session: AsyncSession = Depends(get_session)
+):
+    return await get_user(user_id, current_user, session)
 
-#更新用戶資料
+# 更新用户资料
 @router.put("/{user_id}")
-async def route_update_user(user_id: str, data: dict, current_user: User = Depends(verify_token)):
-    return await update_user(user_id, data, current_user)
+async def route_update_user(
+    user_id: int, 
+    data: dict, 
+    current_user: dict = Depends(verify_token),
+    session: AsyncSession = Depends(get_session)
+):
+    return await update_user(user_id, data, current_user, session)
 
-#刪除用戶資料
+# 删除用户资料
 @router.delete("/{user_id}")
-async def route_delete_user(user_id: str, current_user: User = Depends(verify_token)):
-    return await delete_user(user_id, current_user)
+async def route_delete_user(
+    user_id: int, 
+    current_user: dict = Depends(verify_token),
+    session: AsyncSession = Depends(get_session)
+):
+    return await delete_user(user_id, current_user, session)

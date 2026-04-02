@@ -1,35 +1,56 @@
 # app/db.py
-from motor.motor_asyncio import AsyncIOMotorClient
-from beanie import init_beanie
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import MetaData
 from app.core.config import settings
-from app.models.user import User
-from app.models.hotel import Hotel
-from app.models.room import Room
-from app.models.order import Order
-from app.models.real_flight_orders import RealFlightOrders
-from app.models.room_inventory import RoomInventory
-from app.models.subscribe import Subscribe
-from app.models.hotel_flash_sale import HotelFlashSale, HotelFlashSaleInventory, HotelFlashSaleOrder
+
+
+class Base(DeclarativeBase):
+    """SQLAlchemy 声明基类"""
+    metadata = MetaData()
+
+
+# 创建异步数据库引擎
+engine = create_async_engine(
+    settings.database_url,
+    echo=False,  # 关闭 SQL 语句打印，减少日志输出
+    pool_pre_ping=True,  # 连接池健康检查
+    pool_recycle=3600,  # 连接回收时间
+    pool_size=20,  # 连接池大小
+    max_overflow=0  # 最大溢出连接数
+)
+
+# 创建异步会话工厂
+AsyncSessionLocal = async_sessionmaker(
+    engine, 
+    class_=AsyncSession, 
+    expire_on_commit=False
+)
+
+
+async def get_session() -> AsyncSession:
+    """获取数据库会话的依赖注入函数"""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
 
 
 async def init_db():
-    client = AsyncIOMotorClient(settings.MONGODB)
-    db = client.get_default_database()
-    print("Connected to MongoDB:", db.name)
-
-    # 初始化 Beanie ODM，註冊所有模型
-    await init_beanie(
-        database=db,
-        document_models=[
-            User, 
-            Hotel, 
-            Room, 
-            Order, 
-            RealFlightOrders, 
-            RoomInventory,
-            Subscribe,
-            HotelFlashSale,
-            HotelFlashSaleInventory,
-            HotelFlashSaleOrder
-        ]
-    )
+    """初始化数据库，创建所有表"""
+    async with engine.begin() as conn:
+        # 导入所有模型以确保它们被注册到 metadata
+        from app.models.user import User
+        from app.models.hotel import Hotel  
+        from app.models.room import Room
+        from app.models.order import Order
+        from app.models.real_flight_orders import RealFlightOrders
+        from app.models.room_inventory import RoomInventory
+        from app.models.subscribe import Subscribe
+        from app.models.hotel_flash_sale import HotelFlashSale, HotelFlashSaleInventory, HotelFlashSaleOrder
+        
+        # 创建所有表
+        await conn.run_sync(Base.metadata.create_all)
+        print(f"Connected to MySQL: {settings.DB_NAME}")
+        print("All tables created successfully")

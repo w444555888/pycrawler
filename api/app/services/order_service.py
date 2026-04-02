@@ -1,7 +1,6 @@
 from fastapi import HTTPException
 from datetime import datetime, timezone, timedelta
-from beanie import PydanticObjectId, Link
-from bson import ObjectId
+
 from datetime import datetime, timezone
 from app.models.room_inventory import RoomInventory
 from app.models.room import Room

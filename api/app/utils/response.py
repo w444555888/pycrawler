@@ -1,7 +1,5 @@
 import json
 import os
-from bson import ObjectId, DBRef
-from beanie import PydanticObjectId
 from pydantic import BaseModel
 from datetime import datetime
 from starlette.responses import JSONResponse
@@ -17,13 +15,9 @@ class CustomJSONResponse(JSONResponse):
 
     @staticmethod
     def json_encoder(obj):
-        if isinstance(obj, DBRef):
-            return str(obj.id)
-        if isinstance(obj, (ObjectId, PydanticObjectId)):
-            return str(obj)
         if isinstance(obj, datetime):
             return obj.isoformat()
-        if isinstance(obj, BaseModel):  # Pydantic/Beanie 物件
+        if isinstance(obj, BaseModel):  # Pydantic 物件
             return obj.model_dump(by_alias=True, exclude_none=True)
         if isinstance(obj, dict):  # dict 類型
             return obj

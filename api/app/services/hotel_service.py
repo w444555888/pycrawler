@@ -1,34 +1,67 @@
-from app.utils.response import success
-from app.models.room_inventory import RoomInventory
-from app.models.room import Room
-from app.models.hotel import Hotel
-from app.utils.error_handler import raise_error
-from typing import Optional
-from beanie import PydanticObjectId
-from pydantic import BaseModel
-from bson import DBRef, ObjectId
-from datetime import datetime, timedelta
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select, func
+from typing import List, Optional
+from ..models.hotel import Hotel
+from ..models.room import Room
 
 
-# 獲取所有飯店資料（不帶任何過濾條件）
-async def get_all_hotels():
-    hotels = await Hotel.find_all().to_list()
-    return success(data=hotels, exclude_fields=["cheapestPrice"])
+# 获取所有酒店数据
+async def get_all_hotels(session: AsyncSession):
+    """获取所有酒店"""
+    stmt = select(Hotel)
+    result = await session.execute(stmt)
+    return result.scalars().all()
 
 
-# 模糊搜尋飯店名稱(搜索框)    
-async def get_hotel_name_suggestions(name: Optional[str] = None):
+# 根据ID获取酒店
+async def get_hotel_by_id(session: AsyncSession, hotel_id: int):
+    """根据ID获取酒店"""
+    stmt = select(Hotel).where(Hotel.id == hotel_id)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+# 创建酒店
+async def create_hotel(session: AsyncSession, hotel_data: dict):
+    """创建新酒店"""
+    hotel = Hotel(**hotel_data)
+    session.add(hotel)
+    await session.commit()
+    await session.refresh(hotel)
+    return hotel
+
+
+# 模糊搜索酒店名称
+async def get_hotel_name_suggestions(session: AsyncSession, name: Optional[str] = None):
+    """模糊搜索酒店名称"""
     if not name or not name.strip():
-        raise_error(400, "請輸入搜尋名稱")
+        return []
+        
+    stmt = select(Hotel).where(
+        Hotel.name.ilike(f"%{name}%")
+    ).limit(10)
+    
+    result = await session.execute(stmt)
+    hotels = result.scalars().all()
+    
+    return [{"id": h.id, "name": h.name} for h in hotels]
 
-    hotels = await Hotel.find(
-        # i=ignore case（不分大小寫）
-        {"name": {"$regex": name, "$options": "i"}}
-    ).limit(10).to_list()
 
-    result = [{"_id": str(h.id), "name": h.name} for h in hotels]
+# 按城市获取酒店
+async def get_hotels_by_city(session: AsyncSession, city: str):
+    """按城市获取酒店"""
+    stmt = select(Hotel).where(Hotel.city.ilike(f"%{city}%"))
+    result = await session.execute(stmt)
+    return result.scalars().all()
 
-    return success(data=result)
+
+# 按类型获取酒店  
+async def get_hotels_by_type(session: AsyncSession, hotel_type: str):
+    """按类型获取酒店"""
+    stmt = select(Hotel).where(Hotel.type == hotel_type)
+    result = await session.execute(stmt)
+    return result.scalars().all()
 
 
 

@@ -1,50 +1,77 @@
-from app.models.user import User
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select 
+from app.models.user import User, UserResponse
 from app.models.order import Order
 from app.models.real_flight_orders import RealFlightOrders
 from app.utils.response import success
 from app.utils.error_handler import raise_error
 from passlib.hash import bcrypt
-from beanie import PydanticObjectId
 from typing import Dict
 
 
-# 取得單一使用者與其訂單
-async def get_user(user_id: str, current_user: User):
-    if str(current_user["id"]) != user_id and not current_user.get("isAdmin"):
+# 获取单个用户与其订单
+async def get_user(user_id: int, current_user: dict, session: AsyncSession):
+    if current_user["id"] != user_id and not current_user.get("isAdmin"):
         raise_error(403, "您沒有權限執行此操作")
 
-    user = await User.get(user_id)
+    # 查询用户
+    user_result = await session.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
     if not user:
         raise_error(404, "找不到該使用者")
 
-    user_oid = PydanticObjectId(user_id)
+    # 查询普通订单
+    orders_result = await session.execute(select(Order).where(Order.user_id == user_id))
+    all_order = orders_result.scalars().all()
 
-    #  一般訂單
-    all_order = await Order.find(Order.user_id == user_oid).to_list()
-
-    #  航班訂單
-    raw_flight_orders = await RealFlightOrders.find(RealFlightOrders.user_id == user_oid).to_list()
+    # 查询航班订单
+    flight_orders_result = await session.execute(select(RealFlightOrders).where(RealFlightOrders.user_id == user_id))
+    raw_flight_orders = flight_orders_result.scalars().all()
+    
     all_flight_order = []
     for order in raw_flight_orders:
-        order_data = order.model_dump(by_alias=True, exclude_none=True)
-        order_data["id"] = str(order.id)
+        order_data = {
+            "id": order.id,
+            "userId": order.user_id,
+            "orderNumber": order.order_number,
+            "flightInfo": order.flight_info,
+            "passengerInfo": order.passenger_info,
+            "category": order.category,
+            "price": order.price,
+            "status": order.status,
+            "paymentInfo": order.payment_info,
+            "createdAt": order.created_at,
+            "updatedAt": order.updated_at
+        }
         all_flight_order.append(order_data)
+
+    # 转换用户数据
+    user_data = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "isAdmin": user.is_admin,
+        "address": user.address,
+        "phoneNumber": user.phone_number,
+        "realName": user.real_name,
+        "createdAt": user.created_at,
+        "updatedAt": user.updated_at
+    }
 
     return success(
         data={
-            "user": user,  
-            "allOrder": all_order,  
+            "user": user_data,  
+            "allOrder": [order.__dict__ for order in all_order],  
             "allFlightOrder": all_flight_order,
         },
-        message="取得使用者資料成功",
-        exclude_fields=["password"]
+        message="取得使用者資料成功"
     )
 
 
-# 更新使用者資訊
-async def update_user(user_id: str, data: dict, current_user: User):
+# 更新用户信息
+async def update_user(user_id: int, data: dict, current_user: dict, session: AsyncSession):
     
-    if str(current_user["id"]) != user_id and not current_user.get("isAdmin"):
+    if current_user["id"] != user_id and not current_user.get("isAdmin"):
         raise_error(403, "您沒有權限執行此操作")
 
     required_fields = ["password", "address", "phoneNumber", "realName"]
@@ -52,40 +79,80 @@ async def update_user(user_id: str, data: dict, current_user: User):
     if missing:
         raise_error(400, f"缺少必要欄位：{', '.join(missing)}")
 
-    user = await User.get(user_id)
+    # 查询用户
+    user_result = await session.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
     if not user:
         raise_error(404, "找不到該使用者")
 
+    # 更新用户信息
     user.password = bcrypt.hash(data["password"])
     user.address = data["address"]
-    user.phoneNumber = data["phoneNumber"]
-    user.realName = data["realName"]
+    user.phone_number = data["phoneNumber"]
+    user.real_name = data["realName"]
+    user.update_timestamp()
 
-    await user.save()
-    return success(data=user, message="使用者資料更新成功")
+    await session.commit()
+    await session.refresh(user)
+
+    # 转换返回数据
+    user_data = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "isAdmin": user.is_admin,
+        "address": user.address,
+        "phoneNumber": user.phone_number,
+        "realName": user.real_name,
+        "createdAt": user.created_at,
+        "updatedAt": user.updated_at
+    }
+
+    return success(data=user_data, message="使用者資料更新成功")
 
 
-
-# 刪除使用者
-async def delete_user(user_id: str, current_user: User):
-    if str(current_user["id"]) != user_id and not current_user.get("isAdmin"):
+# 删除用户
+async def delete_user(user_id: int, current_user: dict, session: AsyncSession):
+    if current_user["id"] != user_id and not current_user.get("isAdmin"):
         raise_error(403, "您沒有權限執行此操作")
 
-    user = await User.get(user_id)
+    # 查询用户
+    user_result = await session.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
     if not user:
         raise_error(404, "找不到該使用者")
 
-    await user.delete()
+    await session.delete(user)
+    await session.commit()
+    
     return success(message="使用者已成功刪除")
 
 
-
-# 取得全部使用者（限管理員）
-async def get_all_users(current_user: dict):
+# 获取全部用户（限管理员）
+async def get_all_users(current_user: dict, session: AsyncSession):
     if not current_user.get("isAdmin"):
         raise_error(403, "只有管理員可以查看全部使用者")
 
-    users = await User.find_all().to_list()
-    return success(data=users, exclude_fields=["password"], message="取得所有使用者成功")
+    # 查询所有用户
+    result = await session.execute(select(User))
+    users = result.scalars().all()
+    
+    # 转换用户数据
+    users_data = []
+    for user in users:
+        user_data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "isAdmin": user.is_admin,
+            "address": user.address,
+            "phoneNumber": user.phone_number,
+            "realName": user.real_name,
+            "createdAt": user.created_at,
+            "updatedAt": user.updated_at
+        }
+        users_data.append(user_data)
+
+    return success(data=users_data, message="取得所有使用者成功")
 
 

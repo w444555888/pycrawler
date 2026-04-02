@@ -1,17 +1,45 @@
 from datetime import datetime, timezone
-from typing import Optional
-from pydantic import EmailStr, ConfigDict, Field
-from beanie import Document
+from sqlalchemy import String, DateTime
+from sqlalchemy.orm import Mapped, mapped_column
+from pydantic import BaseModel, EmailStr, Field
+from app.db import Base
 
 
-class Subscribe(Document):
-    """訂閱"""
-    model_config = ConfigDict(populate_by_name=True)
+class Subscribe(Base):
+    """订阅模型"""
+    __tablename__ = "subscribes"
+    
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.now(timezone.utc), 
+        nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.now(timezone.utc), 
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
 
-    email: EmailStr = Field(..., unique=True, description="邮箱地址")
+    def update_timestamp(self):
+        """手动更新时间戳"""
+        self.updated_at = datetime.now(timezone.utc)
 
-    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), alias="createdAt")
-    updated_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), alias="updatedAt")
 
-    class Settings:
-        name = "subscribes"
+# Pydantic 模型用于 API
+class SubscribeCreate(BaseModel):
+    email: EmailStr = Field(..., alias="email")
+
+
+class SubscribeResponse(BaseModel):
+    id: int
+    email: str = Field(..., alias="email")
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime = Field(..., alias="updatedAt")
+    
+    class Config:
+        from_attributes = True
+        populate_by_name = True

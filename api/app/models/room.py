@@ -1,78 +1,95 @@
 from datetime import datetime, timezone, timedelta
-from typing import List, Literal, Optional
-from pydantic import BaseModel, Field, ConfigDict 
-from beanie import Document, PydanticObjectId
+from typing import List, Literal, Optional, TYPE_CHECKING
+from sqlalchemy import String, Integer, Text, JSON, DateTime, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from pydantic import BaseModel, Field
 from dateutil.parser import parse as parse_date
-from app.models.hotel import Hotel
+from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.hotel import Hotel
+    from app.models.order import Order
 
 
 class Service(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    """房间服务信息"""
     parking: bool = Field(default=False, alias="parking")
     dinner: bool = Field(default=False, alias="dinner")
     breakfast: bool = Field(default=True, alias="breakfast")
 
 
 class PaymentOption(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    """支付选项信息"""
     type: Literal['credit_card', 'paypal', 'bank_transfer', 'on_site_payment'] = Field(..., alias="type")
     description: str = Field(..., alias="description")
     refundable: bool = Field(default=False, alias="refundable")
 
 
 class WeekdayPricing(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-    days_of_week: List[int] = Field(..., alias="days_of_week")
+    """周日价格信息"""
+    days_of_week: List[int] = Field(..., alias="days_of_week")  # [0=周日, 1=周一, ...]
     price: float = Field(..., alias="price")
 
 
 class HolidayPricing(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-    date: str = Field(..., alias="date")  # e.g. "2025-12-25"
+    """假日价格信息"""
+    date: str = Field(..., alias="date")  # "2025-12-25"
     price: float = Field(..., alias="price")
 
 
-class Room(Document):
-    model_config = ConfigDict(populate_by_name=True)
-    title: str = Field(..., alias="title")
-    desc: List[str] = Field(..., alias="desc")
-    room_type: Literal['Single Room', 'Double Room', 'Twin Room', 'Family Room', 'Deluxe Room', 'Triple Room'] = Field(..., alias="roomType")
-    max_people: int = Field(..., alias="maxPeople")
-    service: Service = Field(default_factory=Service, alias="service")
-    hotel_id: PydanticObjectId = Field(..., alias="hotelId")
-    payment_options: List[PaymentOption] = Field(..., alias="paymentOptions")
-    pricing: List[WeekdayPricing] = Field(..., alias="pricing")
-    holidays: List[HolidayPricing] = Field(..., alias="holidays")
+class Room(Base):
+    """房间模型"""
+    __tablename__ = "rooms"
+    
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    desc: Mapped[List[str]] = mapped_column(JSON, nullable=False)
+    room_type: Mapped[str] = mapped_column(String(50), nullable=False)  # Single Room, Double Room, etc.
+    max_people: Mapped[int] = mapped_column(Integer, nullable=False)
+    service: Mapped[dict] = mapped_column(JSON, nullable=False)  # Service 对象
+    hotel_id: Mapped[int] = mapped_column(ForeignKey("hotels.id"), nullable=False, index=True)
+    payment_options: Mapped[List[dict]] = mapped_column(JSON, nullable=False)  # PaymentOption 列表
+    pricing: Mapped[List[dict]] = mapped_column(JSON, nullable=False)  # WeekdayPricing 列表
+    holidays: Mapped[List[dict]] = mapped_column(JSON, nullable=False)  # HolidayPricing 列表
+    
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.now(timezone.utc), 
+        nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, 
+        default=lambda: datetime.now(timezone.utc), 
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
 
-    created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), alias="createdAt")
-    updated_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc), alias="updatedAt")
-
-    class Settings:
-        name = "rooms"
+    # 关系映射
+    hotel: Mapped["Hotel"] = relationship("Hotel", back_populates="rooms")
+    orders: Mapped[List["Order"]] = relationship("Order", back_populates="room")
 
     def update_timestamp(self):
+        """手动更新时间戳"""
         self.updated_at = datetime.now(timezone.utc)
 
-
     def calculate_total_price(self, start_date: str, end_date: str) -> float:
-        """計算房型在指定日期區間的總價格"""
+        """计算房型在指定日期区间的总价格"""
         if not start_date or not end_date:
-            print("缺少日期參數")
+            print("缺少日期参数")
             return 0.0
 
         total_price = 0.0
         current_date = parse_date(start_date).date()
         end_date_obj = parse_date(end_date).date()
         if current_date >= end_date_obj:
-            print("起訖日期不合法")
+            print("起讫日期不合法")
             return 0.0
 
         while current_date < end_date_obj:
             date_str = current_date.isoformat()
-            node_day = (current_date.weekday() + 1) % 7  # Python週一=0 → Node週日=0
-            # print(f"📆 {date_str} (Node週={node_day})")
+            node_day = (current_date.weekday() + 1) % 7  # Python周一=0 → Node周日=0
 
-            # 假日優先
+            # 假日优先
             holiday_price = None
             for h in self.holidays or []:
                 if isinstance(h, dict):
@@ -103,12 +120,55 @@ class Room(Document):
                         break
 
                 if not found:
-                    print(f"無匹配價格，略過")
+                    print("无匹配价格，略过")
 
             current_date += timedelta(days=1)
 
-        print(f"總金額: {total_price}\n")
+        print(f"总金额: {total_price}")
         return total_price
+
+
+# Pydantic 模型用于 API
+class RoomCreate(BaseModel):
+    title: str = Field(..., alias="title")
+    desc: List[str] = Field(..., alias="desc")
+    room_type: Literal['Single Room', 'Double Room', 'Twin Room', 'Family Room', 'Deluxe Room', 'Triple Room'] = Field(..., alias="roomType")
+    max_people: int = Field(..., alias="maxPeople")
+    service: Service = Field(default_factory=Service, alias="service")
+    hotel_id: int = Field(..., alias="hotelId")
+    payment_options: List[PaymentOption] = Field(..., alias="paymentOptions")
+    pricing: List[WeekdayPricing] = Field(..., alias="pricing")
+    holidays: List[HolidayPricing] = Field(..., alias="holidays")
+
+
+class RoomResponse(BaseModel):
+    id: int
+    title: str = Field(..., alias="title")
+    desc: List[str] = Field(..., alias="desc")
+    room_type: str = Field(..., alias="roomType")
+    max_people: int = Field(..., alias="maxPeople")
+    service: dict = Field(..., alias="service")
+    hotel_id: int = Field(..., alias="hotelId")
+    payment_options: List[dict] = Field(..., alias="paymentOptions")
+    pricing: List[dict] = Field(..., alias="pricing")
+    holidays: List[dict] = Field(..., alias="holidays")
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime = Field(..., alias="updatedAt")
+    
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
+
+class RoomUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, alias="title")
+    desc: Optional[List[str]] = Field(default=None, alias="desc")
+    room_type: Optional[str] = Field(default=None, alias="roomType")
+    max_people: Optional[int] = Field(default=None, alias="maxPeople")
+    service: Optional[dict] = Field(default=None, alias="service")
+    payment_options: Optional[List[dict]] = Field(default=None, alias="paymentOptions")
+    pricing: Optional[List[dict]] = Field(default=None, alias="pricing")
+    holidays: Optional[List[dict]] = Field(default=None, alias="holidays")
 
 
 
