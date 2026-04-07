@@ -1,5 +1,5 @@
 import json
-import os
+from app.core.config import settings
 from pydantic import BaseModel
 from datetime import datetime
 from starlette.responses import JSONResponse
@@ -117,8 +117,8 @@ def success(
                     key=k,
                     value=v.get("value", ""),
                     httponly=v.get("httponly", True),
-                    secure=v.get("secure", os.getenv("NODE_ENV") == "production"),
-                    samesite=v.get("samesite", "none" if os.getenv("NODE_ENV") == "production" else "lax"),
+                    secure=v.get("secure", settings.NODE_ENV == "production"),
+                    samesite=v.get("samesite", "none" if settings.NODE_ENV == "production" else "lax"),
                     max_age=v.get("max_age", 7 * 24 * 60 * 60),
                     path=v.get("path", "/")
                 )
@@ -127,8 +127,8 @@ def success(
                     key=k,
                     value=v,
                     httponly=True,
-                    secure=os.getenv("NODE_ENV") == "production",
-                    samesite="none" if os.getenv("NODE_ENV") == "production" else "lax",
+                    secure=settings.NODE_ENV == "production",
+                    samesite="none" if settings.NODE_ENV == "production" else "lax",
                     max_age=7 * 24 * 60 * 60,
                     path="/"
                 )

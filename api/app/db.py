@@ -1,6 +1,11 @@
 # app/db.py
+# create_async_engine => 建立 DB 連線 
+# AsyncSession => DB 操作的 session 
+# async_sessionmaker => session 工廠
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+# 建立 ORM 的 Base 類
 from sqlalchemy.orm import DeclarativeBase
+# 管理所有資料表的結構資訊
 from sqlalchemy import MetaData
 from app.core.config import settings
 

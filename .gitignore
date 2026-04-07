@@ -1,5 +1,5 @@
 # Environment variables (contains sensitive information)
-.env
+# .env
 .env.local
 .env.production
 

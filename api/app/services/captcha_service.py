@@ -1,5 +1,5 @@
 import random
-import os
+from app.core.config import settings
 import jwt
 from fastapi import HTTPException
 from jwt import ExpiredSignatureError, InvalidTokenError
@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 from app.utils.response import success
 from app.utils.error_handler import raise_error
 
-JWT_SECRET = os.getenv("JWT", "w444")
+JWT_SECRET = settings.JWT_SECRET
 JWT_EXPIRE_MINUTES = 5
 
 # 滑塊初始化：產生亂數 x 值並回傳加密的 token

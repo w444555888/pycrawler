@@ -1,12 +1,13 @@
 import smtplib  # Python 內建的 SMTP（發送郵件）模組
 from email.mime.text import MIMEText  # 處理純文字格式郵件內容
 from email.mime.multipart import MIMEMultipart  # 處理多段郵件（主旨、內文等）
+from app.core.config import settings
 import os
 
 
 # env
-EMAIL_ADDRESS = os.getenv("EMAIL")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+EMAIL_ADDRESS = settings.EMAIL
+EMAIL_PASSWORD = settings.EMAIL_PASSWORD
 
 
 async def send_reset_email(to_email: str, token: str):

@@ -5,13 +5,13 @@ from app.models.user import User
 from app.utils.email_service import send_reset_email
 from app.utils.response import success
 from app.utils.error_handler import raise_error
-from passlib.hash import bcrypt
+from app.core.config import settings
+import bcrypt  # 使用直接的bcrypt
 from datetime import datetime, timezone, timedelta
 import jwt
-import os
 import secrets
 
-JWT_SECRET = os.getenv("JWT", "w444")
+JWT_SECRET = settings.JWT_SECRET
 JWT_EXPIRE_HOURS = 168  # 對應 Node 7d = 168hr
 
 
@@ -21,8 +21,8 @@ def set_token_cookie(token: str, max_age=7 * 24 * 60 * 60):
         "JWT_token": {
             "value": token,
             "httponly": True,
-            "secure": os.getenv("NODE_ENV") == "production",
-            "samesite": "none" if os.getenv("NODE_ENV") == "production" else "lax",
+            "secure": settings.NODE_ENV == "production",
+            "samesite": "none" if settings.NODE_ENV == "production" else "lax",
             "max_age": max_age,
             "path": "/"
         }
@@ -54,11 +54,13 @@ async def register(data: dict, session: AsyncSession):
     if exists:
         raise_error(400, "此帳號或信箱已被註冊")
     
-    hashed_pwd = bcrypt.hash(data["password"])
+    # 使用直接的bcrypt进行哈希
+    salt = bcrypt.gensalt()
+    hashed_pwd = bcrypt.hashpw(data["password"].encode('utf-8'), salt)
     user = User(
         username=data["username"], 
         email=data["email"], 
-        password=hashed_pwd,
+        password=hashed_pwd.decode('utf-8'),  # 将bytes转为string存储
         is_admin=data.get("isAdmin", False)
     )
     session.add(user)
@@ -78,7 +80,8 @@ async def login(data: dict, response: Response, session: AsyncSession):
     if not user:
         raise_error(404, "沒有此使用者")
     
-    if not bcrypt.verify(data["password"], user.password):
+    # 使用直接的bcrypt进行验证
+    if not bcrypt.checkpw(data["password"].encode('utf-8'), user.password.encode('utf-8')):
         raise_error(404, "輸入密碼錯誤")
     
     token = generate_token(user)
@@ -119,7 +122,9 @@ async def reset_password(token: str, new_password: str, session: AsyncSession):
     if not user:
         raise_error(404, "重置令牌無效或已過期")
 
-    user.password = bcrypt.hash(new_password)
+    # 使用直接的bcrypt进行哈希
+    salt = bcrypt.gensalt()
+    user.password = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
     user.reset_password_token = None
     user.reset_password_expires = None
     await session.commit()
