@@ -31,10 +31,19 @@ const Personal = () => {
   const [flightOrders, setFlightOrders] = useState([])
   const [flashSaleOrders, setFlashSaleOrders] = useState([]);
   const [password, setPassword] = useState('')
-  const [realName, setRealName] = useState(userInfo?.realName || '')
-  const [phoneNumber, setPhoneNumber] = useState(userInfo?.phoneNumber || '')
-  const [address, setAddress] = useState(userInfo?.address || '')
+  const [realName, setRealName] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [address, setAddress] = useState('')
   const [loading, setLoading] = useState('')
+
+  // 當 userInfo 更新時同步更新本地狀態
+  useEffect(() => {
+    if (userInfo) {
+      setRealName(userInfo.realName || '')
+      setPhoneNumber(userInfo.phoneNumber || '')
+      setAddress(userInfo.address || '')
+    }
+  }, [userInfo])
 
 
   const handleClickToHome = () => {
@@ -44,6 +53,13 @@ const Personal = () => {
   // 編輯帳戶
   const handleEdit = async (e) => {
     e.preventDefault()
+    
+    // 確保 userInfo 和 userInfo.id 存在才發送請求
+    if (!userInfo || !userInfo.id) {
+      toast.error('用戶信息未加載，請稍後再試');
+      return;
+    }
+    
     const result = await request('PUT', `/users/${userInfo.id}`, { password: password, realName: realName, phoneNumber: phoneNumber, address: address }, setLoading)
     if (result.success) {
       const data = result.data;
@@ -65,6 +81,11 @@ const Personal = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
+      // 確保 userInfo 和 userInfo.id 存在才發送請求
+      if (!userInfo || !userInfo.id) {
+        return;
+      }
+      
       const result = await request('GET', `/users/${userInfo.id}`);
       if (result.success) {
         const data = result.data;

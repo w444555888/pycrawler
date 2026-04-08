@@ -102,9 +102,9 @@ async def get_all_hotel_flash_sale_orders(
 
 
 @router.get("/{sale_id}")
-async def get_hotel_flash_sale_by_id(sale_id: str):
+async def get_hotel_flash_sale_by_id(sale_id: str, session: AsyncSession = Depends(get_session)):
     """獲取單個限時搶購活動詳情"""
-    sale = await HotelFlashSaleService.get_hotel_flash_sale_by_id(sale_id)
+    sale = await HotelFlashSaleService.get_hotel_flash_sale_by_id(sale_id, session)
     return success(data=sale)
 
 

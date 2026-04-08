@@ -64,21 +64,31 @@ class HotelFlashSaleService:
         return serialized_sales
 
     @staticmethod
-    async def get_hotel_flash_sale_by_id(sale_id: str) -> Dict:
+    async def get_hotel_flash_sale_by_id(sale_id: str, session: AsyncSession) -> Dict:
         """取得單筆活動"""
-        if not PydanticObjectId.is_valid(sale_id):
+        try:
+            sale_id_int = int(sale_id)
+        except ValueError:
             raise_error(400, "無效的活動ID")
             
-        sale = await HotelFlashSale.get(sale_id)
+        # 使用 SQLAlchemy 查詢，包含關聯的 hotel 和 room
+        stmt = select(HotelFlashSale).options(
+            selectinload(HotelFlashSale.hotel),
+            selectinload(HotelFlashSale.room)
+        ).where(HotelFlashSale.id == sale_id_int)
+        
+        result = await session.execute(stmt)
+        sale = result.scalar_one_or_none()
+        
         if not sale:
             raise_error(404, "找不到此活動")
             
-        # 手動序列化Link字段為字符串
+        # 序列化數據
         sale_data = {
-            "id": str(sale.id),
+            "id": sale.id,
             "title": sale.title,
-            "hotelId": str(sale.hotel_id.ref.id) if hasattr(sale.hotel_id, 'ref') else str(sale.hotel_id),
-            "roomId": str(sale.room_id.ref.id) if hasattr(sale.room_id, 'ref') else str(sale.room_id),
+            "hotelId": sale.hotel_id,
+            "roomId": sale.room_id,
             "basePrice": sale.base_price,
             "discountRate": sale.discount_rate,
             "startTime": sale.start_time.isoformat() if sale.start_time else None,
@@ -89,7 +99,16 @@ class HotelFlashSaleService:
             "description": sale.description,
             "isActive": sale.is_active,
             "createdAt": sale.created_at.isoformat() if sale.created_at else None,
-            "updatedAt": sale.updated_at.isoformat() if sale.updated_at else None
+            "updatedAt": sale.updated_at.isoformat() if sale.updated_at else None,
+            # 添加關聯數據
+            "hotel": {
+                "id": sale.hotel.id,
+                "name": sale.hotel.name
+            } if sale.hotel else None,
+            "room": {
+                "id": sale.room.id,
+                "title": sale.room.title
+            } if sale.room else None
         }
         
         return sale_data
