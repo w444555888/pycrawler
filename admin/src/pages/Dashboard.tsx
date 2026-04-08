@@ -18,7 +18,7 @@ const { Header, Sider, Content } = Layout;
 
 const Dashboard: React.FC = () => {
   interface AdminUser {
-    _id: string;
+    id: string;
     username: string;
     email: string;
     isAdmin: boolean;

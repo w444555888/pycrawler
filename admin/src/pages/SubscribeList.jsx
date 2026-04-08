@@ -48,7 +48,7 @@ const SubscribeList = () => {
       render: (_, record) => (
         <Popconfirm
           title="確定要刪除嗎？"
-          onConfirm={() => handleDelete(record._id)}
+          onConfirm={() => handleDelete(record.id)}
         >
           <Button danger>刪除</Button>
         </Popconfirm>
@@ -60,7 +60,7 @@ const SubscribeList = () => {
     <div className="subscribe-page">
       <h2 className="title">訂閱管理</h2>
       <Table
-        rowKey="_id"
+        rowKey="id"
         dataSource={list}
         columns={columns}
         loading={loading}

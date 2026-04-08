@@ -21,7 +21,19 @@ async def add_subscribe(data: dict, session: AsyncSession = Depends(get_session)
 async def get_all_subscribes(current_user: User = Depends(verify_token), session: AsyncSession = Depends(get_session)):
     """取得全部訂閱"""
     subscribes = await SubscribeService.get_all_subscribes(session)
-    return success(data=subscribes)
+    
+    # 序列化订阅数据
+    subscribes_data = []
+    for sub in subscribes:
+        sub_data = {
+            "id": sub.id,
+            "email": sub.email,
+            "created_at": sub.created_at,
+            "updated_at": sub.updated_at
+        }
+        subscribes_data.append(sub_data)
+    
+    return success(data=subscribes_data)
 
 
 @router.delete("/{subscribe_id}")

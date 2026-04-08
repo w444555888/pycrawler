@@ -74,7 +74,7 @@ async def update_user(user_id: int, data: dict, current_user: dict, session: Asy
     if current_user["id"] != user_id and not current_user.get("isAdmin"):
         raise_error(403, "您沒有權限執行此操作")
 
-    required_fields = ["password", "address", "phoneNumber", "realName"]
+    required_fields = ["address", "phoneNumber", "realName"]
     missing = [field for field in required_fields if not data.get(field)]
     if missing:
         raise_error(400, f"缺少必要欄位：{', '.join(missing)}")
@@ -86,7 +86,10 @@ async def update_user(user_id: int, data: dict, current_user: dict, session: Asy
         raise_error(404, "找不到該使用者")
 
     # 更新用户信息
-    user.password = bcrypt.hash(data["password"])
+    # 如果提供了密码且不为空，才更新密码
+    if data.get("password") and data["password"].strip():
+        user.password = bcrypt.hash(data["password"])
+    
     user.address = data["address"]
     user.phone_number = data["phoneNumber"]
     user.real_name = data["realName"]

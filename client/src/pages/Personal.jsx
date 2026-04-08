@@ -44,7 +44,7 @@ const Personal = () => {
   // 編輯帳戶
   const handleEdit = async (e) => {
     e.preventDefault()
-    const result = await request('PUT', `/users/${userInfo._id}`, { password: password, realName: realName, phoneNumber: phoneNumber, address: address }, setLoading)
+    const result = await request('PUT', `/users/${userInfo.id}`, { password: password, realName: realName, phoneNumber: phoneNumber, address: address }, setLoading)
     if (result.success) {
       const data = result.data;
       dispatch(setUserInfo(data));
@@ -65,7 +65,7 @@ const Personal = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const result = await request('GET', `/users/${userInfo._id}`);
+      const result = await request('GET', `/users/${userInfo.id}`);
       if (result.success) {
         const data = result.data;
         setOrders(data.allOrder || []);
@@ -74,7 +74,7 @@ const Personal = () => {
       } else toast.error(`${result.message}`)
     };
     fetchUserData();
-  }, [userInfo?._id])
+  }, [userInfo?.id])
 
   return (
     <div className="personalWrapper">
@@ -151,9 +151,9 @@ const Personal = () => {
             <EmptyState title="無訂房訂單" />
           ) : (
             orders.map((order) => (
-              <div key={order._id} className="orderItem">
+              <div key={order.id} className="orderItem">
                 <div className="orderHeader">
-                  <span>訂單編號: {order._id}</span>
+                  <span>訂單編號: {order.id}</span>
                   <span>狀態: {
                     order.status === 'pending' ? '支付中' :
                       order.status === 'confirmed' ? '已確認' :
@@ -203,7 +203,7 @@ const Personal = () => {
                 : '未知';
 
               return (
-                <div key={order._id} className="orderItem">
+                <div key={order.id} className="orderItem">
                   <div className="orderHeader">
                     <span>訂單編號: {order.orderNumber}</span>
                     <span>
@@ -256,7 +256,7 @@ const Personal = () => {
                     <div className="passengerInfo">
                       <p>乘客資訊</p>
                       {order.passengerInfo.map((passenger, index) => (
-                        <div key={passenger._id || index} className="passenger">
+                        <div key={passenger.id || index} className="passenger">
                           <p>乘客 {index + 1}</p>
                           <p data-label="姓名">{passenger.name}</p>
                           <p data-label="性別">{passenger.gender === 1 ? '男' : '女'}</p>
@@ -280,9 +280,9 @@ const Personal = () => {
             <EmptyState title="無搶購訂房活動訂單" />
           ) : (
             flashSaleOrders.map((order) => (
-              <div key={order._id} className="orderItem">
+              <div key={order.id} className="orderItem">
                 <div className="orderHeader">
-                  <span>訂單編號: {order._id}</span>
+                  <span>訂單編號: {order.id}</span>
                   <span>狀態: {
                     order.status === 'booked' ? '已訂購' :
                       order.status === 'cancelled' ? '已取消' : '未知'

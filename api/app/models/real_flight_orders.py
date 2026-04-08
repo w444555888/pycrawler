@@ -62,13 +62,13 @@ class RealFlightOrders(Base):
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
+        default=lambda: datetime.now(), 
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(), 
+        onupdate=lambda: datetime.now(),
         nullable=False
     )
 
@@ -77,7 +77,7 @@ class RealFlightOrders(Base):
 
     def update_timestamp(self):
         """手动更新时间戳"""
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now()
 
 
 # Pydantic 模型用于 API

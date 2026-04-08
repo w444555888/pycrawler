@@ -66,7 +66,20 @@ async def register(data: dict, session: AsyncSession):
     session.add(user)
     await session.commit()
     await session.refresh(user)
-    return success(data=user, message="註冊成功", exclude_fields=["password"])
+    
+    # 序列化用户数据
+    user_data = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "is_admin": user.is_admin,
+        "address": user.address,
+        "phone_number": user.phone_number,
+        "real_name": user.real_name,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at
+    }
+    return success(data=user_data, message="註冊成功")
 
 
 async def login(data: dict, response: Response, session: AsyncSession):
@@ -87,10 +100,22 @@ async def login(data: dict, response: Response, session: AsyncSession):
     token = generate_token(user)
     cookie = set_token_cookie(token)
 
+    # 序列化用户数据
+    user_data = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "is_admin": user.is_admin,
+        "address": user.address,
+        "phone_number": user.phone_number,
+        "real_name": user.real_name,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at
+    }
+
     return success(
-        data={"userDetails": user},
-        cookies=cookie,
-        exclude_fields=["password"]
+        data={"userDetails": user_data},
+        cookies=cookie
     )
 
 

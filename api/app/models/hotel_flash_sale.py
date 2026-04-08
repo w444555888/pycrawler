@@ -31,13 +31,13 @@ class HotelFlashSale(Base):
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
+        default=lambda: datetime.now(), 
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(), 
+        onupdate=lambda: datetime.now(),
         nullable=False
     )
 
@@ -49,7 +49,7 @@ class HotelFlashSale(Base):
 
     def update_timestamp(self):
         """手动更新时间戳"""
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now()
 
 
 class HotelFlashSaleInventory(Base):
@@ -64,13 +64,13 @@ class HotelFlashSaleInventory(Base):
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
+        default=lambda: datetime.now(), 
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(), 
+        onupdate=lambda: datetime.now(),
         nullable=False
     )
 
@@ -84,7 +84,7 @@ class HotelFlashSaleInventory(Base):
 
     def update_timestamp(self):
         """手动更新时间戳"""
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now()
 
 
 class HotelFlashSaleOrder(Base):
@@ -104,13 +104,13 @@ class HotelFlashSaleOrder(Base):
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
+        default=lambda: datetime.now(), 
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(), 
+        onupdate=lambda: datetime.now(),
         nullable=False
     )
 
@@ -122,7 +122,7 @@ class HotelFlashSaleOrder(Base):
 
     def update_timestamp(self):
         """手动更新时间戳"""
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now()
 
 
 # Pydantic 模型用于 API

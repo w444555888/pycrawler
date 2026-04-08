@@ -22,15 +22,13 @@ async def create_room(data: dict, session: AsyncSession):
     room = Room(
         hotel_id=data.get("hotelId"),
         title=data.get("title", ""),
-        description=data.get("description", ""),
-        images=data.get("images", []),
-        amenities=data.get("amenities", []),
-        max_guests=data.get("maxGuests", 1),
+        desc=data.get("desc", []),
         room_type=data.get("roomType", ""),
-        base_price=data.get("basePrice", 0),
-        price_per_night=data.get("pricePerNight", 0),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        max_people=data.get("maxPeople", 1),
+        service=data.get("service", {}),
+        payment_options=data.get("paymentOptions", []),
+        pricing=data.get("pricing", []),
+        holidays=data.get("holidays", [])
     )
     session.add(room)
     await session.commit()
@@ -40,13 +38,13 @@ async def create_room(data: dict, session: AsyncSession):
         "id": room.id,
         "hotelId": room.hotel_id,
         "title": room.title,
-        "description": room.description,
-        "images": room.images,
-        "amenities": room.amenities,
-        "maxGuests": room.max_guests,
+        "desc": room.desc,
         "roomType": room.room_type,
-        "basePrice": room.base_price,
-        "pricePerNight": room.price_per_night,
+        "maxPeople": room.max_people,
+        "service": room.service,
+        "paymentOptions": room.payment_options,
+        "pricing": room.pricing,
+        "holidays": room.holidays,
         "createdAt": room.created_at,
         "updatedAt": room.updated_at
     }
@@ -65,22 +63,22 @@ async def update_room(room_id: int, data: dict, session: AsyncSession):
     # 更新房间信息
     if "title" in data:
         room.title = data["title"]
-    if "description" in data:
-        room.description = data["description"]
-    if "images" in data:
-        room.images = data["images"]
-    if "amenities" in data:
-        room.amenities = data["amenities"]
-    if "maxGuests" in data:
-        room.max_guests = data["maxGuests"]
+    if "desc" in data:
+        room.desc = data["desc"]
     if "roomType" in data:
         room.room_type = data["roomType"]
-    if "basePrice" in data:
-        room.base_price = data["basePrice"]
-    if "pricePerNight" in data:
-        room.price_per_night = data["pricePerNight"]
+    if "maxPeople" in data:
+        room.max_people = data["maxPeople"]
+    if "service" in data:
+        room.service = data["service"]
+    if "paymentOptions" in data:
+        room.payment_options = data["paymentOptions"]
+    if "pricing" in data:
+        room.pricing = data["pricing"]
+    if "holidays" in data:
+        room.holidays = data["holidays"]
     
-    room.updated_at = datetime.now(timezone.utc)
+    room.update_timestamp()
     await session.commit()
     await session.refresh(room)
 
@@ -103,13 +101,13 @@ async def update_room(room_id: int, data: dict, session: AsyncSession):
         "id": room.id,
         "hotelId": room.hotel_id,
         "title": room.title,
-        "description": room.description,
-        "images": room.images,
-        "amenities": room.amenities,
-        "maxGuests": room.max_guests,
+        "desc": room.desc,
         "roomType": room.room_type,
-        "basePrice": room.base_price,
-        "pricePerNight": room.price_per_night,
+        "maxPeople": room.max_people,
+        "service": room.service,
+        "paymentOptions": room.payment_options,
+        "pricing": room.pricing,
+        "holidays": room.holidays,
         "createdAt": room.created_at,
         "updatedAt": room.updated_at
     }
@@ -150,13 +148,13 @@ async def list_rooms(session: AsyncSession):
             "id": room.id,
             "hotelId": room.hotel_id,
             "title": room.title,
-            "description": room.description,
-            "images": room.images,
-            "amenities": room.amenities,
-            "maxGuests": room.max_guests,
+            "desc": room.desc,
             "roomType": room.room_type,
-            "basePrice": room.base_price,
-            "pricePerNight": room.price_per_night,
+            "maxPeople": room.max_people,
+            "service": room.service,
+            "paymentOptions": room.payment_options,
+            "pricing": room.pricing,
+            "holidays": room.holidays,
             "createdAt": room.created_at,
             "updatedAt": room.updated_at
         }
@@ -178,13 +176,13 @@ async def get_room(room_id: int, session: AsyncSession):
         "id": room.id,
         "hotelId": room.hotel_id,
         "title": room.title,
-        "description": room.description,
-        "images": room.images,
-        "amenities": room.amenities,
-        "maxGuests": room.max_guests,
+        "desc": room.desc,
         "roomType": room.room_type,
-        "basePrice": room.base_price,
-        "pricePerNight": room.price_per_night,
+        "maxPeople": room.max_people,
+        "service": room.service,
+        "paymentOptions": room.payment_options,
+        "pricing": room.pricing,
+        "holidays": room.holidays,
         "createdAt": room.created_at,
         "updatedAt": room.updated_at
     }
@@ -226,13 +224,13 @@ async def list_rooms_by_hotel(hotel_id: int, session: AsyncSession):
             "id": room.id,
             "hotelId": room.hotel_id,
             "title": room.title,
-            "description": room.description,
-            "images": room.images,
-            "amenities": room.amenities,
-            "maxGuests": room.max_guests,
+            "desc": room.desc,
             "roomType": room.room_type,
-            "basePrice": room.base_price,
-            "pricePerNight": room.price_per_night,
+            "maxPeople": room.max_people,
+            "service": room.service,
+            "paymentOptions": room.payment_options,
+            "pricing": room.pricing,
+            "holidays": room.holidays,
             "createdAt": room.created_at,
             "updatedAt": room.updated_at,
             "inventory": inventory_data
@@ -274,8 +272,7 @@ async def update_room_inventory(payload: dict, session: AsyncSession):
         if existing:
             # 更新現有記錄
             existing.total_rooms = total_rooms
-            existing.remaining_rooms = total_rooms - (existing.booked_rooms or 0)
-            existing.updated_at = datetime.now(timezone.utc)
+            existing.update_timestamp()
             print(f"更新現有庫存: roomId={room_id}, date={date_obj}, totalRooms={total_rooms}")
         else:
             # 建立新記錄
@@ -283,10 +280,7 @@ async def update_room_inventory(payload: dict, session: AsyncSession):
                 room_id=room_id,
                 date=date_obj,
                 total_rooms=total_rooms,
-                booked_rooms=0,
-                remaining_rooms=total_rooms,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                booked_rooms=0
             )
             session.add(new_inv)
             print(f"新增庫存: roomId={room_id}, date={date_obj}, totalRooms={total_rooms}")

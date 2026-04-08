@@ -6,7 +6,7 @@ import { request } from '../utils/apiService';
 import './orders.scss';
 
 interface OrderType {
-  _id: string;
+  id: string;
   hotelId: string;
   hotelName?: string;
   roomId: string;
@@ -67,8 +67,8 @@ const Orders: React.FC = () => {
   const columns: ColumnsType<OrderType> = [
     {
       title: '訂單編號',
-      dataIndex: '_id',
-      key: '_id',
+      dataIndex: 'id',
+      key: 'id',
       width: 220,
     },
     {
@@ -148,7 +148,7 @@ const Orders: React.FC = () => {
             { label: '標記為完成', key: 'completed' },
             { label: '標記為取消', key: 'cancelled' },
           ],
-          onClick: ({ key }: { key: string }) => handleUpdateStatus(record._id, key),
+          onClick: ({ key }: { key: string }) => handleUpdateStatus(record.id, key),
         };
 
         return (
@@ -159,7 +159,7 @@ const Orders: React.FC = () => {
 
             <Popconfirm
               title="確定要刪除此訂單嗎？"
-              onConfirm={() => handleCancel(record._id)}
+              onConfirm={() => handleCancel(record.id)}
               okText="確定"
               cancelText="取消"
             >
@@ -179,7 +179,7 @@ const Orders: React.FC = () => {
       <Table
         columns={columns}
         dataSource={orders}
-        rowKey="_id"
+        rowKey="id"
         loading={loading}
         locale={{ emptyText: '尚無訂單資料' }}
       />

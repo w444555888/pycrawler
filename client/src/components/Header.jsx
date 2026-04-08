@@ -78,7 +78,7 @@ const Header = () => {
               {showSuggestions && suggestions.length > 0 && (
                 <ul className="suggestion-list">
                   {suggestions.map((item) => (
-                    <li key={item._id} onClick={() => handleSuggestionClick(item.name)}>
+                    <li key={item.id} onClick={() => handleSuggestionClick(item.name)}>
                       {item.name}
                     </li>
                   ))}

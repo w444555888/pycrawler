@@ -12,7 +12,7 @@ import "./flashSaleDetail.scss";
 
 const FlashSaleDetail = () => {
     const { userInfo } = useSelector(state => state.user);
-    const userId = userInfo?._id ?? ''
+    const userId = userInfo?.id ?? ''
 
     // saleId
     const { id } = useParams();
@@ -46,7 +46,7 @@ const FlashSaleDetail = () => {
         }
         setBooking(true);
         const res = await request("POST", "/hotelFlashSale/book", {
-            saleId: sale._id,
+            saleId: sale.id,
             userId,
             date: dayjs(date).format("YYYY-MM-DD"),
             basePrice: sale.basePrice,

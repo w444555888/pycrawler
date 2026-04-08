@@ -384,7 +384,7 @@ const Hotel = () => {
                       const allSoldOut = fullInventory.every(i => i.remainingRooms === 0);
                       const isSoldOut = fullInventory.some(i => i.remainingRooms === 0);
                       return fullInventory.map((inv, idx) => (
-                        <tr key={`${e._id}-${inv.date}`}>
+                        <tr key={`${e.id}-${inv.date}`}>
                           {/* 房型 */}
                           {idx === 0 && (
                             <td rowSpan={fullInventory.length} className="roomTitle">
@@ -454,7 +454,7 @@ const Hotel = () => {
                           {idx === 0 && (
                             <td rowSpan={fullInventory.length} className="orderBtn">
                               <button
-                                onClick={() => handleNavigateToOrder(e._id)}
+                                onClick={() => handleNavigateToOrder(e.id)}
                                 disabled={isSoldOut || allSoldOut}
                                 className={isSoldOut || allSoldOut ? "btn soldout" : "btn active"}
                               >

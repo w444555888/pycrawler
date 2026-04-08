@@ -19,7 +19,7 @@ const Hotels = () => {
   const [editingRoom, setEditingRoom] = useState<any | null>(null);
   const [roomList, setRoomList] = useState<any[]>([]);
   const [editingHotelId, setEditingHotelId] = useState<string | null>(null);
-  const [_, forceUpdate] = useState({});
+  const [forceUpdate, setForceUpdate] = useState({});
   const [roomForm] = Form.useForm();
   const [hotelForm] = Form.useForm();
   const [mapCoord, setMapCoord] = useState<{ lat: number, lng: number }>({
@@ -160,7 +160,7 @@ const Hotels = () => {
         return acc;
       }, {}),
     };
-    const res = editingRoom ? await request('PUT', `/rooms/${editingRoom._id}`, payload) : await request('POST', '/rooms', payload);
+    const res = editingRoom ? await request('PUT', `/rooms/${editingRoom.id}`, payload) : await request('POST', '/rooms', payload);
     if (res.success) {
       message.success(editingRoom ? '房型編輯成功' : '房型新增成功');
       setRoomEditModalVisible(false);
@@ -184,7 +184,7 @@ const Hotels = () => {
       setSelectedRoom(room);
       const res = await request('GET', `/rooms/findHotel/${editingHotelId}`);
       if (!res.success) throw new Error('查詢庫存失敗');
-      const updatedRoom = res.data.find((r: any) => r._id === room._id);
+      const updatedRoom = res.data.find((r: any) => r.id === room.id);
 
       setInventoryData(updatedRoom.inventory);
       setInventoryModalVisible(true);
@@ -198,7 +198,7 @@ const Hotels = () => {
   // 儲存修改後的庫存
   const handleSaveInventory = async () => {
     const updates = Object.entries(editingInventory).map(([date, totalRooms]) => ({
-      roomId: selectedRoom._id,
+      roomId: selectedRoom.id,
       date,
       totalRooms,
     }));
@@ -248,9 +248,20 @@ const Hotels = () => {
 
   const fetchHotels = async () => {
     setLoading(true);
-    const res = await request('GET', '/hotels');
-    if (res.success) setHotels(res.data);
-    setLoading(false);
+    try {
+      const res = await request('GET', '/hotels');
+      if (res.success && Array.isArray(res.data)) {
+        setHotels(res.data);
+      } else {
+        message.error(res.message || '獲取酒店列表失敗');
+        setHotels([]);
+      }
+    } catch (error) {
+      message.error('獲取酒店列表錯誤');
+      setHotels([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -260,10 +271,10 @@ const Hotels = () => {
       const h = res.data;
       setEditingHotel({
         ...h,
-        checkInTime: dayjs(h.checkInTime, 'HH:mm'),
-        checkOutTime: dayjs(h.checkOutTime, 'HH:mm'),
+        checkInTime: dayjs(h.check_in_time, 'HH:mm'),
+        checkOutTime: dayjs(h.check_out_time, 'HH:mm'),
         photos: h.photos.join(','),
-        nearbyAttractions: h.nearbyAttractions.join(','),
+        nearbyAttractions: h.nearby_attractions.join(','),
         facilities: Object.keys(h.facilities).filter(k => h.facilities[k])
       });
       setIsModalVisible(true);
@@ -297,7 +308,7 @@ const Hotels = () => {
         return obj;
       }, {} as Record<string, boolean>)
     };
-    const res = editingHotel ? await request('PUT', `/hotels/${editingHotel._id}`, payload) : await request('POST', '/hotels', payload);
+    const res = editingHotel ? await request('PUT', `/hotels/${editingHotel.id}`, payload) : await request('POST', '/hotels', payload);
     if (res.success) {
       message.success(editingHotel ? '編輯飯店成功' : '新增飯店成功');
       setIsModalVisible(false);
@@ -337,16 +348,16 @@ const Hotels = () => {
         </Image.PreviewGroup>
       )
     },
-    { title: '入住時間', dataIndex: 'checkInTime', key: 'checkInTime' },
-    { title: '退房時間', dataIndex: 'checkOutTime', key: 'checkOutTime' },
+    { title: '入住時間', dataIndex: 'check_in_time', key: 'check_in_time' },
+    { title: '退房時間', dataIndex: 'check_out_time', key: 'check_out_time' },
     {
       title: '操作',
       key: 'action',
       render: (_, record) => (
         <Space>
-          <Button onClick={() => handleEditHotel(record._id)}>編輯</Button>
-          <Button danger onClick={() => handleDeleteHotel(record._id)}>刪除</Button>
-          <Button onClick={() => handleViewRooms(record._id)}>查看房型</Button>
+          <Button onClick={() => handleEditHotel(record.id)}>編輯</Button>
+          <Button danger onClick={() => handleDeleteHotel(record.id)}>刪除</Button>
+          <Button onClick={() => handleViewRooms(record.id)}>查看房型</Button>
         </Space>
       )
     }
@@ -358,7 +369,7 @@ const Hotels = () => {
         <div className="hotels-title">飯店管理</div>
         <Button type="primary" onClick={() => handleAddHotel()}>新增飯店</Button>
       </div>
-      <Table columns={columns} dataSource={hotels} rowKey="_id" loading={loading} className="hotel-table" />
+      <Table columns={columns} dataSource={hotels} rowKey="id" loading={loading} className="hotel-table" />
 
       <DynamicFormModal
         visible={isModalVisible}
@@ -396,11 +407,11 @@ const Hotels = () => {
         </Button>
         <Table
           dataSource={roomList}
-          rowKey="_id"
+          rowKey="id"
           pagination={false}
           columns={[
             { title: '房型名稱', dataIndex: 'title' },
-            { title: '可住人數', dataIndex: 'maxPeople' },
+            { title: '可住人數', dataIndex: 'max_people' },
             {
               title: '服務項目',
               dataIndex: 'service',
@@ -418,7 +429,7 @@ const Hotels = () => {
                 <Space>
                   <Button type="link" onClick={() => handleEditRoom(record)}>編輯</Button>
                   <Button onClick={() => handleViewInventory(record)}>查看庫存</Button>
-                  <Button danger onClick={() => handleDeleteRoom(record._id)}>刪除</Button>
+                  <Button danger onClick={() => handleDeleteRoom(record.id)}>刪除</Button>
                 </Space>
               )
             }

@@ -54,13 +54,13 @@ class Room(Base):
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
+        default=lambda: datetime.now(), 
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, 
-        default=lambda: datetime.now(timezone.utc), 
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(), 
+        onupdate=lambda: datetime.now(),
         nullable=False
     )
 
@@ -70,7 +70,7 @@ class Room(Base):
 
     def update_timestamp(self):
         """手动更新时间戳"""
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now()
 
     def calculate_total_price(self, start_date: str, end_date: str) -> float:
         """计算房型在指定日期区间的总价格"""

@@ -56,8 +56,8 @@ const FlashSaleList = () => {
                     {list.map((item) => (
                         <div
                             className="fs-card"
-                            key={item._id}
-                            onClick={() => navigate(`/flash-sale/${item._id}`)}
+                            key={item.id}
+                            onClick={() => navigate(`/flash-sale/${item.id}`)}
                         >
                             <div className="fs-img-wrap">
                                 <img src={'https://pycrawler-w5we.onrender.com' + item.bannerUrl} className="fs-img" />

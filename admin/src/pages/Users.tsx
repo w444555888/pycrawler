@@ -6,7 +6,7 @@ import DynamicFormModal, { FormFieldConfig } from '../component/DynamicFormModal
 import './users.scss';
 
 interface UserType {
-  _id: string;
+  id: number;
   username: string;
   email: string;
   isAdmin: boolean;
@@ -42,7 +42,7 @@ const Users: React.FC = () => {
   };
 
   // 刪除使用者
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     const res = await request('DELETE', `/users/${id}`);
     if (res.success) {
       message.success('刪除用戶成功');
@@ -68,7 +68,7 @@ const Users: React.FC = () => {
   const handleEditUser = async (values: any) => {
     if (!editUser) return;
 
-    const res = await request('PUT', `/users/${editUser._id}`, values);
+    const res = await request('PUT', `/users/${editUser.id}`, values);
     if (res.success) {
       message.success('更新成功');
       setEditVisible(false);
@@ -104,7 +104,7 @@ const Users: React.FC = () => {
       render: (_, record) => (
         <Space size="middle">
           <Button type="primary" onClick={() => openEditModal(record)}>編輯</Button>
-          <Button type="primary" danger onClick={() => handleDelete(record._id)}>刪除</Button>
+          <Button type="primary" danger onClick={() => handleDelete(record.id)}>刪除</Button>
         </Space>
       ),
     },
@@ -139,7 +139,7 @@ const Users: React.FC = () => {
         <Button type="primary" onClick={() => setModalVisible(true)}>新增用戶</Button>
       </div>
 
-      <Table columns={columns} dataSource={users} rowKey="_id" loading={loading} />
+      <Table columns={columns} dataSource={users} rowKey="id" loading={loading} />
 
       <DynamicFormModal
         visible={modalVisible}

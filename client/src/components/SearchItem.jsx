@@ -18,7 +18,7 @@ const SearchItem =  React.memo(({ hotel }) => {
 
 
   const handleHotelDetail = () => {
-    navigate(`/hotels${location.search}&hotelId=${hotel._id}`, {
+    navigate(`/hotels${location.search}&hotelId=${hotel.id}`, {
       state: { hotel },
     });
   };

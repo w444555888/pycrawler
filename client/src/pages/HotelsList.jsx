@@ -216,7 +216,7 @@ const HotelsList = () => {
                                 ))
                             ) : hotels.length > 0 ? (
                                 hotels.map(hotel => (
-                                    <SearchItem key={hotel._id} hotel={hotel} />
+                                    <SearchItem key={hotel.id} hotel={hotel} />
                                 ))
                             ) : (
                                 <div className="empty-state-wrapper">

@@ -169,7 +169,7 @@ const HotelFlashSale = () => {
             type: 'select',
             required: true,
             readOnly: isEditing,
-            options: hotels.map((h) => ({ label: h.name, value: h._id || h.id })),
+            options: hotels.map((h) => ({ label: h.name, value: h.id })),
             onChange: handleHotelChange
         },
         {
@@ -178,7 +178,7 @@ const HotelFlashSale = () => {
             type: 'select',
             required: true,
             readOnly: isEditing,
-            options: rooms.map((r) => ({ label: r.title, value: r._id || r.id })),
+            options: rooms.map((r) => ({ label: r.title, value: r.id })),
         },
         { name: 'basePrice', label: '活動底價（固定售價）', type: 'number', required: true, readOnly: isEditing },
         { name: 'discountRate', label: '折扣（例如 0.8 = 8 折）', type: 'number', required: true },

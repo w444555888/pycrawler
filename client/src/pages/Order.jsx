@@ -39,7 +39,7 @@ const Order = () => {
 
   useEffect(() => {
     if (availableRooms && roomId) {
-      const room = availableRooms.find(room => room._id === roomId)
+      const room = availableRooms.find(room => room.id === roomId)
       setSelectedRoom(room);
     }
   }, [availableRooms, roomId])
@@ -196,7 +196,7 @@ const Order = () => {
                   <div className="booking-policies">
                     {selectedRoom.paymentOptions.map(policy => (
                       <div
-                        key={policy._id}
+                        key={policy.id}
                         className={`policy-item ${selectedPaymentType === policy.type ? 'selected' : ''}`}
                         onClick={() => setSelectedPaymentType(policy.type)}
                       >
