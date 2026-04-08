@@ -34,6 +34,9 @@ class Settings:
     # Environment
     NODE_ENV = os.getenv("NODE_ENV", "development")
     
+    # Base URL for file serving
+    BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+    
     # 从环境变量中取得 AMADEUS 的设定值，若未设定则使用预设值
     AMADEUS_KEY = os.getenv("AMADEUS_KEY", "47FraKn90PbAmZ79AMT2mCKMTUHxNNVG")
     AMADEUS_SECRET = os.getenv("AMADEUS_SECRET", "2tzRCn2qBInDGM9A")

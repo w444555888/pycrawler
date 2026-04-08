@@ -15,6 +15,17 @@ const HotelFlashSale = () => {
     const [editingSale, setEditingSale] = useState<any | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string>(''); // blob
     const [bannerUrl, setBannerUrl] = useState<string>('');   // server URL
+    
+    // 輔助函數：處理圖片URL
+    const getImageUrl = (url: string) => {
+        if (!url) return '';
+        // 如果已經是完整URL，直接使用
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        // 否則拼接API URL
+        return process.env.REACT_APP_API_URL + url;
+    };
 
 
     // 取得飯店與活動資料
@@ -197,7 +208,7 @@ const HotelFlashSale = () => {
                     {bannerUrl && (
                         <div className='margin-ten'>
                             <Image
-                                src={previewUrl || ( process.env.REACT_APP_API_URL + bannerUrl)}
+                                src={previewUrl || getImageUrl(bannerUrl)}
                                 width={200}
                             />
                         </div>
@@ -215,7 +226,7 @@ const HotelFlashSale = () => {
             title: '封面圖',
             dataIndex: 'bannerUrl',
             render: (url: string) =>
-                url ? <Image src={ process.env.REACT_APP_API_URL + url} width={80} /> : <span>無</span>,
+                url ? <Image src={getImageUrl(url)} width={80} /> : <span>無</span>,
         },
         {
             title: '飯店',

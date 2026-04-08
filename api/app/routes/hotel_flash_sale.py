@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile, Form, Query
 from typing import List, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db import get_session
 from app.models.user import User
 from app.services.auth_service import verify_token
 from app.services.hotel_flash_sale_service import HotelFlashSaleService
@@ -10,21 +12,23 @@ router = APIRouter(tags=["hotelFlashSale"])
 
 @router.get("")
 async def list_hotel_flash_sales(
-    active_only: Optional[bool] = Query(False, alias="activeOnly")
+    active_only: Optional[bool] = Query(False, alias="activeOnly"),
+    session: AsyncSession = Depends(get_session)
 ):
     """獲取飯店限時搶購活動列表"""
     query = {"activeOnly": active_only}
-    sales = await HotelFlashSaleService.list_hotel_flash_sales(query)
+    sales = await HotelFlashSaleService.list_hotel_flash_sales(query, session)
     return success(data=sales)
 
 
 @router.post("") 
 async def create_hotel_flash_sale(
     data: dict,
-    current_user: User = Depends(verify_token)
+    current_user: User = Depends(verify_token),
+    session: AsyncSession = Depends(get_session)
 ):
     """創建飯店限時搶購活動"""
-    sale = await HotelFlashSaleService.create_hotel_flash_sale(data)
+    sale = await HotelFlashSaleService.create_hotel_flash_sale(data, session)
     return success(data=sale, message="活動創建成功")
 
 
@@ -89,10 +93,11 @@ async def book_hotel_flash_sale(
 
 @router.get("/order/all")
 async def get_all_hotel_flash_sale_orders(
-    current_user: User = Depends(verify_token)
+    current_user: User = Depends(verify_token),
+    session: AsyncSession = Depends(get_session)
 ):
     """後台查看所有限時搶購訂單"""
-    orders = await HotelFlashSaleService.get_all_hotel_flash_sale_orders()
+    orders = await HotelFlashSaleService.get_all_hotel_flash_sale_orders(session)
     return success(data=orders)
 
 
