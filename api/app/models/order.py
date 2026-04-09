@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 from typing import Literal, Optional, TYPE_CHECKING
 from sqlalchemy import String, Float, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 import secrets
 from app.db import Base
+from app.models.validators import ValidatedJSONType
 
 if TYPE_CHECKING:
     from app.models.hotel import Hotel
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class Payment(BaseModel):
-    """支付信息"""
+    """支付信息 - 驗證 JSON 結構"""
     method: Literal['credit_card', 'paypal', 'bank_transfer', 'on_site_payment'] = Field(
         default='on_site_payment',
         alias="method"
@@ -40,7 +41,7 @@ class Order(Base):
     check_out_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     total_price: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default='pending', nullable=False)
-    payment: Mapped[dict] = mapped_column(JSON, nullable=False)  # Payment 对象
+    payment: Mapped[dict] = mapped_column(ValidatedJSONType(Payment), nullable=False)  # 驗證 Payment JSON
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
@@ -62,33 +63,3 @@ class Order(Base):
     def update_timestamp(self):
         """手动更新时间戳"""
         self.updated_at = datetime.now()
-
-
-# Pydantic 模型用于 API
-class OrderCreate(BaseModel):
-    user_id: int = Field(..., alias="userId")
-    hotel_id: int = Field(..., alias="hotelId")
-    room_id: int = Field(..., alias="roomId")
-    check_in_date: datetime = Field(..., alias="checkInDate")
-    check_out_date: datetime = Field(..., alias="checkOutDate")
-    total_price: float = Field(..., alias="totalPrice")
-    status: Literal['pending', 'confirmed', 'cancelled', 'completed'] = Field(default='pending', alias="status")
-    payment: Payment = Field(default_factory=Payment, alias="payment")
-
-
-class OrderResponse(BaseModel):
-    id: int
-    user_id: int = Field(..., alias="userId")
-    hotel_id: int = Field(..., alias="hotelId")
-    room_id: int = Field(..., alias="roomId")
-    check_in_date: datetime = Field(..., alias="checkInDate")
-    check_out_date: datetime = Field(..., alias="checkOutDate")
-    total_price: float = Field(..., alias="totalPrice")
-    status: str = Field(..., alias="status")
-    payment: dict = Field(..., alias="payment")
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
-    
-    class Config:
-        from_attributes = True
-        populate_by_name = True

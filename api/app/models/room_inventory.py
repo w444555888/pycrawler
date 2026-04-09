@@ -47,26 +47,3 @@ class RoomInventory(Base):
     def remaining_rooms(self) -> int:
         """虚拟字段：剩余房数"""
         return self.total_rooms - self.booked_rooms
-
-
-# Pydantic 模型用于 API
-class RoomInventoryCreate(BaseModel):
-    room_id: int = Field(..., alias="roomId")
-    date: date_type = Field(...)
-    total_rooms: int = Field(default=0, alias="totalRooms")
-    booked_rooms: int = Field(default=0, alias="bookedRooms")
-
-
-class RoomInventoryResponse(BaseModel):
-    id: int
-    room_id: int = Field(..., alias="roomId")
-    date: date_type = Field(...)
-    total_rooms: int = Field(..., alias="totalRooms")
-    booked_rooms: int = Field(..., alias="bookedRooms")
-    remaining_rooms: int = Field(..., alias="remainingRooms")
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
-    
-    class Config:
-        from_attributes = True
-        populate_by_name = True

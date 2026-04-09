@@ -38,39 +38,3 @@ class User(Base):
     def update_timestamp(self):
         """手动更新时间戳"""
         self.updated_at = datetime.now()
-
-
-# Pydantic 模型用于 API 序列化
-class UserCreate(BaseModel):
-    username: str = Field(..., alias="username")
-    email: EmailStr = Field(..., alias="email")
-    password: str = Field(..., alias="password")
-    is_admin: bool = Field(default=True, alias="isAdmin")
-    address: Optional[str] = Field(default=None, alias="address")
-    phone_number: Optional[str] = Field(default=None, alias="phoneNumber")
-    real_name: Optional[str] = Field(default=None, alias="realName")
-
-
-class UserResponse(BaseModel):
-    id: int
-    username: str = Field(..., alias="username") 
-    email: str = Field(..., alias="email")
-    is_admin: bool = Field(..., alias="isAdmin")
-    address: Optional[str] = Field(default=None, alias="address")
-    phone_number: Optional[str] = Field(default=None, alias="phoneNumber")
-    real_name: Optional[str] = Field(default=None, alias="realName")
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
-    
-    class Config:
-        from_attributes = True
-        populate_by_name = True
-
-
-class UserUpdate(BaseModel):
-    username: Optional[str] = Field(default=None, alias="username")
-    email: Optional[EmailStr] = Field(default=None, alias="email")
-    is_admin: Optional[bool] = Field(default=None, alias="isAdmin")
-    address: Optional[str] = Field(default=None, alias="address")
-    phone_number: Optional[str] = Field(default=None, alias="phoneNumber")
-    real_name: Optional[str] = Field(default=None, alias="realName")

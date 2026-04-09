@@ -2,9 +2,10 @@ from datetime import datetime, timezone, timedelta
 from typing import List, Literal, Optional, TYPE_CHECKING
 from sqlalchemy import String, Integer, Text, JSON, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from dateutil.parser import parse as parse_date
 from app.db import Base
+from app.models.validators import ValidatedJSONType, ValidatedListJSONType
 
 if TYPE_CHECKING:
     from app.models.hotel import Hotel
@@ -12,27 +13,27 @@ if TYPE_CHECKING:
 
 
 class Service(BaseModel):
-    """房间服务信息"""
+    """房间服务信息 - 驗證 JSON 結構"""
     parking: bool = Field(default=False, alias="parking")
     dinner: bool = Field(default=False, alias="dinner")
     breakfast: bool = Field(default=True, alias="breakfast")
 
 
 class PaymentOption(BaseModel):
-    """支付选项信息"""
+    """支付选项信息 - 驗證 JSON 結構"""
     type: Literal['credit_card', 'paypal', 'bank_transfer', 'on_site_payment'] = Field(..., alias="type")
     description: str = Field(..., alias="description")
     refundable: bool = Field(default=False, alias="refundable")
 
 
 class WeekdayPricing(BaseModel):
-    """周日价格信息"""
+    """周日价格信息 - 驗證 JSON 結構"""
     days_of_week: List[int] = Field(..., alias="days_of_week")  # [0=周日, 1=周一, ...]
     price: float = Field(..., alias="price")
 
 
 class HolidayPricing(BaseModel):
-    """假日价格信息"""
+    """假日价格信息 - 驗證 JSON 結構"""
     date: str = Field(..., alias="date")  # "2025-12-25"
     price: float = Field(..., alias="price")
 
@@ -46,11 +47,11 @@ class Room(Base):
     desc: Mapped[List[str]] = mapped_column(JSON, nullable=False)
     room_type: Mapped[str] = mapped_column(String(50), nullable=False)  # Single Room, Double Room, etc.
     max_people: Mapped[int] = mapped_column(Integer, nullable=False)
-    service: Mapped[dict] = mapped_column(JSON, nullable=False)  # Service 对象
+    service: Mapped[dict] = mapped_column(ValidatedJSONType(Service), nullable=False)
     hotel_id: Mapped[int] = mapped_column(ForeignKey("hotels.id"), nullable=False, index=True)
-    payment_options: Mapped[List[dict]] = mapped_column(JSON, nullable=False)  # PaymentOption 列表
-    pricing: Mapped[List[dict]] = mapped_column(JSON, nullable=False)  # WeekdayPricing 列表
-    holidays: Mapped[List[dict]] = mapped_column(JSON, nullable=False)  # HolidayPricing 列表
+    payment_options: Mapped[List[dict]] = mapped_column(ValidatedListJSONType(PaymentOption), nullable=False)
+    pricing: Mapped[List[dict]] = mapped_column(ValidatedListJSONType(WeekdayPricing), nullable=False)
+    holidays: Mapped[List[dict]] = mapped_column(ValidatedListJSONType(HolidayPricing), nullable=False)
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
@@ -126,38 +127,6 @@ class Room(Base):
 
         print(f"总金额: {total_price}")
         return total_price
-
-
-# Pydantic 模型用于 API
-class RoomCreate(BaseModel):
-    title: str = Field(..., alias="title")
-    desc: List[str] = Field(..., alias="desc")
-    room_type: Literal['Single Room', 'Double Room', 'Twin Room', 'Family Room', 'Deluxe Room', 'Triple Room'] = Field(..., alias="roomType")
-    max_people: int = Field(..., alias="maxPeople")
-    service: Service = Field(default_factory=Service, alias="service")
-    hotel_id: int = Field(..., alias="hotelId")
-    payment_options: List[PaymentOption] = Field(..., alias="paymentOptions")
-    pricing: List[WeekdayPricing] = Field(..., alias="pricing")
-    holidays: List[HolidayPricing] = Field(..., alias="holidays")
-
-
-class RoomResponse(BaseModel):
-    id: int
-    title: str = Field(..., alias="title")
-    desc: List[str] = Field(..., alias="desc")
-    room_type: str = Field(..., alias="roomType")
-    max_people: int = Field(..., alias="maxPeople")
-    service: dict = Field(..., alias="service")
-    hotel_id: int = Field(..., alias="hotelId")
-    payment_options: List[dict] = Field(..., alias="paymentOptions")
-    pricing: List[dict] = Field(..., alias="pricing")
-    holidays: List[dict] = Field(..., alias="holidays")
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
-    
-    class Config:
-        from_attributes = True
-        populate_by_name = True
 
 
 class RoomUpdate(BaseModel):

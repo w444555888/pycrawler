@@ -1,9 +1,10 @@
 from typing import Optional, List, Literal, TYPE_CHECKING
 from sqlalchemy import String, Float, Boolean, Integer, Text, JSON, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ValidationError
 from datetime import datetime, timezone
 from app.db import Base
+from app.models.validators import ValidatedJSONType
 
 if TYPE_CHECKING:
     from app.models.room import Room
@@ -11,13 +12,13 @@ if TYPE_CHECKING:
 
 
 class Coordinates(BaseModel):
-    """坐标信息"""
+    """坐标信息 - 驗證 JSON 結構"""
     latitude: float = Field(..., alias="latitude")
     longitude: float = Field(..., alias="longitude")
 
 
 class Facilities(BaseModel):
-    """设施信息"""
+    """设施信息 - 驗證 JSON 結構"""
     wifi: bool = Field(default=False, alias="wifi")
     parking: bool = Field(default=False, alias="parking")
     pool: bool = Field(default=False, alias="pool")
@@ -44,10 +45,10 @@ class Hotel(Base):
     cheapest_price: Mapped[float] = mapped_column(Float, nullable=False, index=True)
     popular_hotel: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     comments: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    facilities: Mapped[dict] = mapped_column(JSON, nullable=False)  # 存储 Facilities 对象
+    facilities: Mapped[dict] = mapped_column(ValidatedJSONType(Facilities), nullable=False)
     check_in_time: Mapped[str] = mapped_column(String(10), nullable=False)
     check_out_time: Mapped[str] = mapped_column(String(10), nullable=False)
-    coordinates: Mapped[dict] = mapped_column(JSON, nullable=False)  # 存储 Coordinates 对象
+    coordinates: Mapped[dict] = mapped_column(ValidatedJSONType(Coordinates), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     nearby_attractions: Mapped[List[str]] = mapped_column(JSON, nullable=False)
     phone: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -71,77 +72,3 @@ class Hotel(Base):
     def update_timestamp(self):
         """手动更新时间戳"""
         self.updated_at = datetime.now()
-
-
-# Pydantic 模型用于 API
-class HotelCreate(BaseModel):
-    name: str = Field(..., alias="name")
-    type: Literal['hotel', 'apartment', 'guesthouse', 'villa', 'hostel', 'motel', 'capsule', 'resort'] = Field(..., alias="type")
-    city: str = Field(..., alias="city")
-    address: str = Field(..., alias="address")
-    distance: Optional[str] = Field(default=None, alias="distance")
-    photos: List[str] = Field(..., alias="photos")
-    title: str = Field(..., alias="title")
-    desc: str = Field(..., alias="desc")
-    rating: Optional[float] = Field(default=None, ge=0, le=10, alias="rating")
-    cheapest_price: float = Field(..., alias="cheapestPrice")
-    popular_hotel: bool = Field(default=False, alias="popularHotel")
-    comments: int = Field(default=0, alias="comments")
-    facilities: Facilities = Field(default_factory=Facilities, alias="facilities")
-    check_in_time: str = Field(..., alias="checkInTime")
-    check_out_time: str = Field(..., alias="checkOutTime")
-    coordinates: Coordinates = Field(..., alias="coordinates")
-    email: str = Field(..., alias="email")
-    nearby_attractions: List[str] = Field(..., alias="nearbyAttractions")
-    phone: str = Field(..., alias="phone")
-
-
-class HotelResponse(BaseModel):
-    id: int
-    name: str = Field(..., alias="name")
-    type: str = Field(..., alias="type")
-    city: str = Field(..., alias="city")
-    address: str = Field(..., alias="address")
-    distance: Optional[str] = Field(default=None, alias="distance")
-    photos: List[str] = Field(..., alias="photos")
-    title: str = Field(..., alias="title")
-    desc: str = Field(..., alias="desc")
-    rating: Optional[float] = Field(default=None, alias="rating")
-    cheapest_price: float = Field(..., alias="cheapestPrice")
-    popular_hotel: bool = Field(..., alias="popularHotel")
-    comments: int = Field(..., alias="comments")
-    facilities: dict = Field(..., alias="facilities")
-    check_in_time: str = Field(..., alias="checkInTime")
-    check_out_time: str = Field(..., alias="checkOutTime")
-    coordinates: dict = Field(..., alias="coordinates")
-    email: str = Field(..., alias="email")
-    nearby_attractions: List[str] = Field(..., alias="nearbyAttractions")
-    phone: str = Field(..., alias="phone")
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
-    
-    class Config:
-        from_attributes = True
-        populate_by_name = True
-
-
-class HotelUpdate(BaseModel):
-    name: Optional[str] = Field(default=None, alias="name")
-    type: Optional[str] = Field(default=None, alias="type")
-    city: Optional[str] = Field(default=None, alias="city")
-    address: Optional[str] = Field(default=None, alias="address")
-    distance: Optional[str] = Field(default=None, alias="distance")
-    photos: Optional[List[str]] = Field(default=None, alias="photos")
-    title: Optional[str] = Field(default=None, alias="title")
-    desc: Optional[str] = Field(default=None, alias="desc")
-    rating: Optional[float] = Field(default=None, alias="rating")
-    cheapest_price: Optional[float] = Field(default=None, alias="cheapestPrice")
-    popular_hotel: Optional[bool] = Field(default=None, alias="popularHotel")
-    comments: Optional[int] = Field(default=None, alias="comments")
-    facilities: Optional[dict] = Field(default=None, alias="facilities")
-    check_in_time: Optional[str] = Field(default=None, alias="checkInTime")
-    check_out_time: Optional[str] = Field(default=None, alias="checkOutTime")
-    coordinates: Optional[dict] = Field(default=None, alias="coordinates")
-    email: Optional[str] = Field(default=None, alias="email")
-    nearby_attractions: Optional[List[str]] = Field(default=None, alias="nearbyAttractions")
-    phone: Optional[str] = Field(default=None, alias="phone")

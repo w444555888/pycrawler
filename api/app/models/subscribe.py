@@ -27,19 +27,3 @@ class Subscribe(Base):
     def update_timestamp(self):
         """手动更新时间戳"""
         self.updated_at = datetime.now()
-
-
-# Pydantic 模型用于 API
-class SubscribeCreate(BaseModel):
-    email: EmailStr = Field(..., alias="email")
-
-
-class SubscribeResponse(BaseModel):
-    id: int
-    email: str = Field(..., alias="email")
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
-    
-    class Config:
-        from_attributes = True
-        populate_by_name = True
