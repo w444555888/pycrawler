@@ -1,6 +1,6 @@
 """
 JSON 驗證類型 - 使用 SQLAlchemy TypeDecorator
-這是 SQLAlchemy 官方推薦的驗證 JSON 字段的方式
+TypeDecorator 是 SQLAlchemy 用來「包裝/擴充資料庫欄位型別行為」的基底類別
 """
 
 from sqlalchemy.types import TypeDecorator, JSON as JSON_SQLAlchemy

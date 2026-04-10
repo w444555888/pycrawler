@@ -149,3 +149,20 @@ pycrawler/
 
 
 
+# api\app\db.py
+   ↓
+建立 session
+   ↓
+yield session → 給 controller 用
+   ↓
+API 執行 SQL
+   ↓
+API 結束
+   ↓
+finally 執行
+   ↓
+close session
+
+
+
+
