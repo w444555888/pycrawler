@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.routes import hotels, rooms, users, auth, order, flight, captcha, hotel_flash_sale, subscribe
 from app.db import init_db
 from app.utils.error_handler import http_error_handler, validation_exception_handler
+from app.utils.file_utils import get_upload_dir
 from app.scheduler import start_scheduler, stop_scheduler
 from app.utils.redis_client import init_redis, close_redis
 
@@ -46,7 +47,7 @@ app.add_middleware(
 )
 
 # 配置静态文件服务
-uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+uploads_dir = get_upload_dir()
 if not os.path.exists(uploads_dir):
     os.makedirs(uploads_dir)
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
