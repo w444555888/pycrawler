@@ -35,17 +35,12 @@ const Flight = () => {
  
     // Redux状态
     const { 
-        flights,
+        searchResults: flights,
         selectedFlight,
-        departureCity,
-        arrivalCity,
-        departureIata,
-        arrivalIata,
-        departureSuggestions,
-        arrivalSuggestions,
-        showDepartureSuggestions,
-        showArrivalSuggestions,
-        loading,
+        searchParams: { departureCity, arrivalCity, departureIata, arrivalIata },
+        departureSuggestions: { items: departureSuggestions, showSuggestions: showDepartureSuggestions, loading: departureLoading },
+        arrivalSuggestions: { items: arrivalSuggestions, showSuggestions: showArrivalSuggestions, loading: arrivalLoading },
+        searchLoading,
         pagination
     } = useSelector(state => state.flight)
     
@@ -105,7 +100,7 @@ const Flight = () => {
     // 加載更多函數
     const loadMoreDeparture = async () => {
         // 檢查是否有loading和pagination狀態，使用安全訪問
-        if (loading?.departure || (pagination?.departure && pagination.departure.currentPage >= pagination.departure.totalPages)) return
+        if (departureLoading || (pagination?.departure && pagination.departure.currentPage >= pagination.departure.totalPages)) return
         
         const keyword = pagination?.departure?.keyword || ''
         const currentPage = pagination?.departure?.currentPage || 1
@@ -122,7 +117,7 @@ const Flight = () => {
 
     const loadMoreArrival = async () => {
         // 檢查是否有loading和pagination狀態，使用安全訪問
-        if (loading?.arrival || (pagination?.arrival && pagination.arrival.currentPage >= pagination.arrival.totalPages)) return
+        if (arrivalLoading || (pagination?.arrival && pagination.arrival.currentPage >= pagination.arrival.totalPages)) return
         
         const keyword = pagination?.arrival?.keyword || ''
         const currentPage = pagination?.arrival?.currentPage || 1
@@ -214,7 +209,7 @@ const Flight = () => {
     // 加載更多航班
     const loadMoreFlights = async () => {
         // 檢查是否有loading狀態和分頁資訊
-        if (loading?.flight || (pagination?.flight && pagination.flight.currentPage >= pagination.flight.totalPages)) return
+        if (searchLoading || (pagination?.flight && pagination.flight.currentPage >= pagination.flight.totalPages)) return
         
         const searchParams = pagination?.flight?.searchParams
         const currentPage = pagination?.flight?.currentPage || 1
@@ -298,13 +293,13 @@ const Flight = () => {
                                 onFocus={() => dispatch(setShowDepartureSuggestions(true))}
                                 className="searchInput"
                             />
-                            {showDepartureSuggestions && (departureSuggestions.length > 0 || loading?.departure) && (
+                            {showDepartureSuggestions && (departureSuggestions.length > 0 || departureLoading) && (
                                 <div 
                                     className="suggestionsList"
                                     ref={departureSuggestionsRef}
                                     onScroll={handleDepartureSuggestionsScroll}
                                 >
-                                    {loading?.departure && departureSuggestions.length === 0 ? (
+                                    {departureLoading && departureSuggestions.length === 0 ? (
                                         <div className="suggestionItem">搜尋中...</div>
                                     ) : (
                                         <>
@@ -320,7 +315,7 @@ const Flight = () => {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {loading?.departureMore && (
+                                            {departureLoading && (
                                                 <div className="suggestionItem loading">加載中...</div>
                                             )}
                                         </>
@@ -344,13 +339,13 @@ const Flight = () => {
                                 onFocus={() => dispatch(setShowArrivalSuggestions(true))}
                                 className="searchInput"
                             />
-                            {showArrivalSuggestions && (arrivalSuggestions.length > 0 || loading?.arrival) && (
+                            {showArrivalSuggestions && (arrivalSuggestions.length > 0 || arrivalLoading) && (
                                 <div 
                                     className="suggestionsList"
                                     ref={arrivalSuggestionsRef}
                                     onScroll={handleArrivalSuggestionsScroll}
                                 >
-                                    {loading?.arrival && arrivalSuggestions.length === 0 ? (
+                                    {arrivalLoading && arrivalSuggestions.length === 0 ? (
                                         <div className="suggestionItem">搜尋中...</div>
                                     ) : (
                                         <>
@@ -366,7 +361,7 @@ const Flight = () => {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {loading?.arrivalMore && (
+                                            {arrivalLoading && (
                                                 <div className="suggestionItem loading">加載中...</div>
                                             )}
                                         </>
@@ -497,7 +492,7 @@ const Flight = () => {
                                 );
                             })}
                             {/* 根據實際loading狀態顯示加載動畫 */}
-                            {loading?.flight && (
+                            {searchLoading && (
                                 <div className="flightItem loading">
                                     <div className="loadingText">加載中...</div>
                                 </div>

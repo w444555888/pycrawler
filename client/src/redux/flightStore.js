@@ -18,9 +18,9 @@ export const fetchFlights = createAsyncThunk(
 // 异步获取机场建议
 export const fetchAirportSuggestions = createAsyncThunk(
   'flight/fetchAirportSuggestions',
-  async ({ keyword, type }, { rejectWithValue }) => {
+  async ({ keyword, type, page = 1 }, { rejectWithValue }) => {
     try {
-      const result = await request('GET', `/flight/airports/suggestions?keyword=${keyword}`);
+      const result = await request('GET', `/flight/locations/search?keyword=${keyword}&page=${page}&limit=10`);
       return result.success ? { data: result.data, type } : rejectWithValue(result.message);
     } catch (error) {
       return rejectWithValue(error.message);

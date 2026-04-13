@@ -13,8 +13,15 @@ class AmadeusService:
                     "grant_type": "client_credentials",
                     "client_id": settings.AMADEUS_KEY,
                     "client_secret": settings.AMADEUS_SECRET
+                },
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded"
                 }
             )
+
+        print("STATUS:", res.status_code)
+        print("BODY:", res.text)    
+
         res.raise_for_status()
         return res.json()["access_token"]
 

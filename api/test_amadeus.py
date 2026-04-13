@@ -10,7 +10,7 @@ async def main():
     print("Token:", token)
 
     # 測試航班搜尋
-    result = await service.search_flights(origin="LAX", destination="JFK", date="2026-04-01")
+    result = await service.search_flights(origin="LAX", destination="JFK", date="2026-04-20")
     print(result)
 
 if __name__ == "__main__":
