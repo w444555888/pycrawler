@@ -20,21 +20,26 @@ const Order = () => {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderData, setOrderData] = useState(null);
   const [savedOrderInfo, setSavedOrderInfo] = useState(null); // 保存订单信息用于成功页面展示
+  const [isRestoring, setIsRestoring] = useState(true); // 标记是否正在恢复草稿订单
 
 
   useEffect(() => {
-    dispatch(restoreDraftOrders());
+    const restoreData = async () => {
+      dispatch(restoreDraftOrders());
+      // 给一个短暂的延迟确保Redux状态更新完成
+      setTimeout(() => {
+        setIsRestoring(false);
+      }, 50);
+    };
+    restoreData();
   }, [dispatch]);
 
 
   useEffect(() => {
-    console.log('=== Order useEffect 开始执行 ===');
-    console.log('当前状态:', {
-      orderSuccess,
-      draftHotelOrder: !!draftHotelOrder,
-      draftHotelOrderData: draftHotelOrder,
-      hasExpiresAt: !!draftHotelOrder?.expiresAt
-    });
+    if (isRestoring) {
+      console.log('正在恢复草稿订单，等待完成...');
+      return;
+    }
     
     if (orderSuccess) {
       console.log('订单已成功，跳过检查');
@@ -51,13 +56,6 @@ const Order = () => {
     if (draftHotelOrder.expiresAt) {
       const expirationTime = new Date(draftHotelOrder.expiresAt);
       const currentTime = new Date();
-      console.log('时间检查:', {
-        expiresAt: draftHotelOrder.expiresAt,
-        expirationTime: expirationTime.toISOString(),
-        currentTime: currentTime.toISOString(),
-        isExpired: expirationTime <= currentTime,
-        timeDiff: expirationTime.getTime() - currentTime.getTime()
-      });
       
       if (expirationTime <= currentTime) {
         console.warn('草稿订单已过期');
@@ -71,9 +69,7 @@ const Order = () => {
     } else {
       console.log('无过期时间设置');
     }
-    
-    console.log('=== Order useEffect 执行完毕 ===');
-  }, [draftHotelOrder, dispatch, navigate, orderSuccess]);
+  }, [draftHotelOrder, dispatch, navigate, orderSuccess, isRestoring]);
 
   const handleOrder = async () => {
     if (!draftHotelOrder) {
@@ -156,7 +152,7 @@ const Order = () => {
     </div>
   )
   
-  if (!draftHotelOrder && !orderSuccess) return <OrderSkeleton />
+  if (isRestoring || (!draftHotelOrder && !orderSuccess)) return <OrderSkeleton />
 
   const displayData = savedOrderInfo || draftHotelOrder;
   const { hotelData, roomData, checkInDate, checkOutDate } = displayData || {};
