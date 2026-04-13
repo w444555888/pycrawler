@@ -67,7 +67,8 @@ class Hotel(Base):
 
     # 关系映射
     rooms: Mapped[List["Room"]] = relationship("Room", back_populates="hotel")
-    orders: Mapped[List["Order"]] = relationship("Order", back_populates="hotel")
+    # 暂时注释掉 orders 关系，避免循环导入问题
+    # orders: Mapped[List["Order"]] = relationship("Order", back_populates="hotel")
 
     def update_timestamp(self):
         """手动更新时间戳"""

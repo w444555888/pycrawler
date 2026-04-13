@@ -25,6 +25,8 @@ async def list_hotels(
     max_price: Optional[float] = Query(None, alias="maxPrice"),
     start_date: Optional[str] = Query(None, alias="startDate"),
     end_date: Optional[str] = Query(None, alias="endDate"),
+    adult: Optional[int] = Query(None),
+    room: Optional[int] = Query(None),
     session: AsyncSession = Depends(get_session)
 ):
 
@@ -37,6 +39,8 @@ async def list_hotels(
         max_price=max_price,
         start_date=start_date,
         end_date=end_date,
+        adult=adult,
+        room=room,
     )
 
 #獲取熱門飯店資訊 給首頁、精選區塊用

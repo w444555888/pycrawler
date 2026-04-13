@@ -279,7 +279,9 @@ async def list_hotels(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     start_date: Optional[str] = None,
-    end_date: Optional[str] = None
+    end_date: Optional[str] = None,
+    adult: Optional[int] = None,
+    room: Optional[int] = None
 ):
     try:
         # 建立基本查詢
@@ -300,8 +302,13 @@ async def list_hotels(
         result = await session.execute(stmt)
         hotels = result.scalars().all()
         
+        # 如果查詢條件中有 hotel_id 但找不到，直接返回空結果（不是錯誤）
+        if hotel_id and not hotels:
+            return success(data=[])
+        
+        # 如果是一般搜尋但找不到結果，也返回空結果
         if not hotels:
-            raise_error(404, "找不到符合條件的飯店")
+            return success(data=[])
         
         # 轉換資料格式
         hotel_list = []
@@ -313,6 +320,53 @@ async def list_hotels(
             
             available_rooms = []
             for room in rooms:
+                # 根據成人數篩選房間
+                if adult and room.max_people < adult:
+                    continue
+                
+                # 查詢房間庫存
+                inventory_stmt = select(RoomInventory).where(RoomInventory.room_id == room.id)
+                
+                # 如果有日期範圍，篩選該範圍內的庫存
+                if start_date and end_date:
+                    try:
+                        from datetime import datetime
+                        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+                        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+                        inventory_stmt = inventory_stmt.where(
+                            RoomInventory.date >= start,
+                            RoomInventory.date <= end
+                        )
+                        # 只篩選有剩餘房間的庫存
+                        inventory_stmt = inventory_stmt.filter(
+                            RoomInventory.total_rooms > RoomInventory.booked_rooms
+                        )
+                    except ValueError:
+                        pass  # 如果日期格式錯誤，不做日期篩選
+                
+                inventory_result = await session.execute(inventory_stmt)
+                inventories = inventory_result.scalars().all()
+                
+                # 如果指定了日期範圍但沒有可用庫存，跳過這個房間
+                if start_date and end_date and not inventories:
+                    continue
+                
+                # 轉換庫存資料
+                room_inventories = []
+                for inventory in inventories:
+                    inventory_data = {
+                        "id": inventory.id,
+                        "roomId": inventory.room_id,
+                        "date": inventory.date,
+                        "availableRooms": inventory.remaining_rooms,  # 使用計算屬性
+                        "totalRooms": inventory.total_rooms,
+                        "bookedRooms": inventory.booked_rooms,
+                        "isAvailable": inventory.remaining_rooms > 0,  # 計算可用性
+                        "createdAt": inventory.created_at,
+                        "updatedAt": inventory.updated_at
+                    }
+                    room_inventories.append(inventory_data)
+                
                 room_data = {
                     "id": room.id,
                     "hotelId": room.hotel_id,
@@ -324,6 +378,7 @@ async def list_hotels(
                     "paymentOptions": room.payment_options,
                     "pricing": room.pricing,
                     "holidays": room.holidays,
+                    "inventory": room_inventories,
                     "createdAt": room.created_at,
                     "updatedAt": room.updated_at
                 }
@@ -358,12 +413,17 @@ async def list_hotels(
         
         return success(data=clean_for_json(hotel_list))
         
+    except ValueError as e:
+        # 處理日期格式錯誤等值錯誤
+        print(f"list_hotels ValueError: {e}")
+        return success(data=[], message="日期格式錯誤或參數無效")
     except Exception as e:
         import traceback
         print(f"list_hotels 例外型別: {type(e)}")
         print(f"list_hotels 例外內容: {e}")
         print(traceback.format_exc())
-        return success(data=[])
+        # 重新抛出异常
+        raise e
 
 
 
