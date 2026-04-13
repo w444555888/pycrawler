@@ -34,9 +34,9 @@ def set_token_cookie(token: str, max_age=7 * 24 * 60 * 60):
 # Payload	你設定的資料（id, isAdmin, exp）
 # Signature	用密鑰簽名的驗證碼
 def generate_token(user):
-    # 要轉化為字串，因為 ObjectId 不是 JSON 可序列化的類型
+    # SQLAlchemy 的 id 是整數類型，可直接序列化為 JSON
     payload = {
-        "id": str(user.id),
+        "id": user.id,
         "isAdmin": getattr(user, "is_admin", False),
         "exp": datetime.now(timezone.utc) + timedelta(days=7)
     }
