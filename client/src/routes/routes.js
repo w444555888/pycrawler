@@ -22,7 +22,7 @@ export const ROUTES = {
   HOTELS_LIST: '/hotelsList',
   HOTELS: '/hotels',
   PERSONAL: '/personal',
-  ORDER: '/order/:startDate/:endDate/:hotelId/:roomId',
+  ORDER: '/order',
   FLIGHT: '/flight',
   BOOKINGFLIGHT: '/bookingFlight',
   HOTELFLASHSALE: '/flash-sale',

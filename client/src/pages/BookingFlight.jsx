@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'  
+import { restoreSelectedFlight } from '../redux/flightStore'
 import Navbar from '../components/Navbar'
 import './bookingFlight.scss'
-import { zhTW } from 'date-fns/locale'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlane } from '@fortawesome/free-solid-svg-icons'
 import { request } from '../utils/apiService'
 import dayjs from '../utils/dayjs-config'
 import formatDuration from '../utils/formatDuration';
@@ -15,6 +14,11 @@ import Skeleton from 'react-loading-skeleton'
 const BookingFlight = () => {
     const location = useLocation()
     const navigate = useNavigate()
+    const dispatch = useDispatch()  
+    
+    // ✨ 从Redux获取选中的航班信息
+    const { selectedFlight } = useSelector(state => state.flight)
+    
     const [loading, setLoading] = useState(false);
     const [bookingSuccess, setBookingSuccess] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);
@@ -97,18 +101,50 @@ const BookingFlight = () => {
 
 
     useEffect(() => {
-        if (location.state && location.state.flightInfo) {
-            setFlightData({
+        let flightInfo = null;
+        
+        if (location.state?.flightInfo) {
+            console.log('从location.state获取航班信息');
+            flightInfo = {
                 flightInfo: location.state.flightInfo,
                 price: location.state.price,
                 tripType: location.state.tripType
-            })
-            setSelectedClass('ECONOMY')
-        } else {
-            toast.error('未找到航班信息，请重新选择航班')
-            navigate('/flight')
+            };
         }
-    }, [location.state, navigate])
+        else if (selectedFlight) {
+            console.log('从Redux获取航班信息');
+            flightInfo = selectedFlight;
+        }
+        else {
+            console.log('尝试从sessionStorage恢复航班信息');
+            dispatch(restoreSelectedFlight());
+            const timer = setTimeout(() => {
+                try {
+                    const cachedFlight = sessionStorage.getItem('selectedFlight');
+                    if (cachedFlight) {
+                        const parsedFlight = JSON.parse(cachedFlight);
+                        console.log('成功从sessionStorage恢复航班信息');
+                        setFlightData(parsedFlight);
+                        setSelectedClass('ECONOMY');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('从sessionStorage解析航班信息失败:', error);
+                }
+                console.warn('无法恢复航班信息，重定向到航班搜索页');
+                toast.error('航班信息已过期，请重新选择航班');
+                navigate('/flight');
+            }, 100);
+            
+            return () => clearTimeout(timer);
+        }
+        if (flightInfo) {
+            console.log('设置航班数据:', flightInfo);
+            setFlightData(flightInfo);
+            setSelectedClass('ECONOMY');
+        }
+        
+    }, [location.state, selectedFlight, dispatch, navigate]);
 
 
     // GSAP動畫

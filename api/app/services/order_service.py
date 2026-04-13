@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.room_inventory import RoomInventory
@@ -45,11 +45,9 @@ async def list_orders(session: AsyncSession):
             "roomTitle": room.title if room else "",
             "checkInDate": order.check_in_date,
             "checkOutDate": order.check_out_date,
-            "guests": order.guests,
-            "totalAmount": order.total_amount,
+            "totalPrice": order.total_price,
             "status": order.status,
-            "customerInfo": order.customer_info,
-            "paymentInfo": order.payment_info,
+            "payment": order.payment,
             "createdAt": order.created_at,
             "updatedAt": order.updated_at
         }
@@ -90,11 +88,9 @@ async def get_order(order_id: int, session: AsyncSession):
         "roomTitle": room.title if room else "",
         "checkInDate": order.check_in_date,
         "checkOutDate": order.check_out_date,
-        "guests": order.guests,
-        "totalAmount": order.total_amount,
+        "totalPrice": order.total_price,
         "status": order.status,
-        "customerInfo": order.customer_info,
-        "paymentInfo": order.payment_info,
+        "payment": order.payment,
         "createdAt": order.created_at,
         "updatedAt": order.updated_at
     }
@@ -114,10 +110,17 @@ async def create_order(data: Dict, current_user: dict, session: AsyncSession):
     if not hotel_id or not room_id or not total_price or not check_in or not check_out:
         raise_error(400, "缺少必要欄位")
 
-    # 轉日期型別
     try:
-        start = datetime.strptime(check_in, "%Y-%m-%d").date()
-        end = datetime.strptime(check_out, "%Y-%m-%d").date()
+        hotel_id = int(hotel_id)
+        room_id = int(room_id)
+        total_price = float(total_price)
+    except (ValueError, TypeError):
+        raise_error(400, "ID或價格格式錯誤")
+
+    # 轉日期型別 - 轉換為無時區的datetime對象
+    try:
+        start = datetime.strptime(check_in, "%Y-%m-%d")  
+        end = datetime.strptime(check_out, "%Y-%m-%d")   
     except Exception:
         raise_error(400, "日期格式錯誤，請使用 YYYY-MM-DD")
 
@@ -145,7 +148,7 @@ async def create_order(data: Dict, current_user: dict, session: AsyncSession):
         stay_dates.append(current_day)
         current_day += timedelta(days=1)
 
-    # 檢查庫存 - 簡化版本
+    # 檢查庫存
     for d in stay_dates:
         existing_stmt = select(RoomInventory).where(
             RoomInventory.room_id == room_id,
@@ -168,7 +171,7 @@ async def create_order(data: Dict, current_user: dict, session: AsyncSession):
         
         if existing:
             existing.booked_rooms += 1
-            existing.updated_at = datetime.now(timezone.utc)
+            existing.updated_at = datetime.now()  # 移除時區
         else:
             new_inv = RoomInventory(
                 room_id=room_id,
@@ -176,8 +179,8 @@ async def create_order(data: Dict, current_user: dict, session: AsyncSession):
                 total_rooms=1,  # 預設值
                 booked_rooms=1,
                 remaining_rooms=0,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                created_at=datetime.now(),  # 移除時區
+                updated_at=datetime.now()   # 移除時區
             )
             session.add(new_inv)
 
@@ -185,20 +188,25 @@ async def create_order(data: Dict, current_user: dict, session: AsyncSession):
     service_fee = total_price * SERVICE_FEE_RATE
     total_price_with_fee = total_price + service_fee
 
-    # 建立訂單
+    # 準備付款信息，符合Payment模型結構
+    payment_data = data.get("payment", {})
+    payment_info = {
+        "method": payment_data.get("method", "on_site_payment"),
+        "status": "pending",
+        "transactionId": payment_data.get("transactionId", "")
+    }
+
     order = Order(
         user_id=current_user["id"],
         hotel_id=hotel_id,
         room_id=room_id,
-        check_in_date=check_in,
-        check_out_date=check_out,
-        guests=data.get("guests", 1),
-        total_amount=total_price_with_fee,
-        status=data.get("status", "pending"),
-        customer_info=data.get("customerInfo", {}),
-        payment_info=data.get("paymentInfo", {}),
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        check_in_date=start,
+        check_out_date=end,
+        total_price=total_price_with_fee,  
+        status="pending",
+        payment=payment_info,
+        created_at=datetime.now(), 
+        updated_at=datetime.now()  
     )
     session.add(order)
     await session.commit()
@@ -213,11 +221,9 @@ async def create_order(data: Dict, current_user: dict, session: AsyncSession):
         "roomId": order.room_id,
         "checkInDate": order.check_in_date,
         "checkOutDate": order.check_out_date,
-        "guests": order.guests,
-        "totalAmount": order.total_amount,
+        "totalPrice": order.total_price,
         "status": order.status,
-        "customerInfo": order.customer_info,
-        "paymentInfo": order.payment_info,
+        "payment": order.payment,
         "createdAt": order.created_at,
         "updatedAt": order.updated_at
     }
@@ -244,7 +250,7 @@ async def update_order(order_id: int, data: Dict, session: AsyncSession):
         raise_error(400, "無效的訂單狀態")
 
     order.status = status
-    order.updated_at = datetime.now(timezone.utc)
+    order.updated_at = datetime.now()  # 移除時區
     await session.commit()
     await session.refresh(order)
     
@@ -255,17 +261,14 @@ async def update_order(order_id: int, data: Dict, session: AsyncSession):
         "roomId": order.room_id,
         "checkInDate": order.check_in_date,
         "checkOutDate": order.check_out_date,
-        "guests": order.guests,
-        "totalAmount": order.total_amount,
+        "totalPrice": order.total_price,
         "status": order.status,
-        "customerInfo": order.customer_info,
-        "paymentInfo": order.payment_info,
+        "payment": order.payment,
         "createdAt": order.created_at,
         "updatedAt": order.updated_at
     }
     
     return success(data=order_data)
-
 
 
 # 刪除訂單（釋放庫存）
@@ -309,7 +312,7 @@ async def delete_order(order_id: int, session: AsyncSession):
                 if existing:
                     existing.booked_rooms = max(0, existing.booked_rooms - 1)
                     existing.remaining_rooms = existing.total_rooms - existing.booked_rooms
-                    existing.updated_at = datetime.now(timezone.utc)
+                    existing.updated_at = datetime.now()  
                     
                 current_day += timedelta(days=1)
                 

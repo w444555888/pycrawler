@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { useParams } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'  
+import { restoreDraftOrders, clearDraftHotelOrder } from '../redux/orderStore' 
 import Navbar from '../components/Navbar'
 import { format } from "date-fns"
 import "./order.scss"
@@ -8,41 +9,124 @@ import Skeleton from 'react-loading-skeleton'
 import { MdFreeBreakfast } from "react-icons/md"
 import { toast } from 'react-toastify'
 import { request } from '../utils/apiService'
+
 const Order = () => {
-  const { startDate, endDate, hotelId, roomId } = useParams();
-  const { currentHotel, availableRooms } = useSelector(state => state.hotel);
+  const navigate = useNavigate(); 
+  const dispatch = useDispatch();
+  const { draftHotelOrder } = useSelector(state => state.order);
   const { userInfo } = useSelector(state => state.user);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  // 付款方式
+  
   const [selectedPaymentType, setSelectedPaymentType] = useState(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderData, setOrderData] = useState(null);
+  const [savedOrderInfo, setSavedOrderInfo] = useState(null); // 保存订单信息用于成功页面展示
+
+
+  useEffect(() => {
+    dispatch(restoreDraftOrders());
+  }, [dispatch]);
+
+
+  useEffect(() => {
+    console.log('=== Order useEffect 开始执行 ===');
+    console.log('当前状态:', {
+      orderSuccess,
+      draftHotelOrder: !!draftHotelOrder,
+      draftHotelOrderData: draftHotelOrder,
+      hasExpiresAt: !!draftHotelOrder?.expiresAt
+    });
+    
+    if (orderSuccess) {
+      console.log('订单已成功，跳过检查');
+      return;
+    }
+    
+    if (!draftHotelOrder) {
+      console.warn('没有找到草稿订单，重定向到酒店列表');
+      toast.error('订单信息已过期，请重新选择房间');
+      navigate('/hotels');
+      return;
+    }
+    
+    if (draftHotelOrder.expiresAt) {
+      const expirationTime = new Date(draftHotelOrder.expiresAt);
+      const currentTime = new Date();
+      console.log('时间检查:', {
+        expiresAt: draftHotelOrder.expiresAt,
+        expirationTime: expirationTime.toISOString(),
+        currentTime: currentTime.toISOString(),
+        isExpired: expirationTime <= currentTime,
+        timeDiff: expirationTime.getTime() - currentTime.getTime()
+      });
+      
+      if (expirationTime <= currentTime) {
+        console.warn('草稿订单已过期');
+        dispatch(clearDraftHotelOrder());
+        toast.error('订单已过期，请重新选择房间');
+        navigate('/hotels');
+        return;
+      } else {
+        console.log('草稿订单未过期，继续');
+      }
+    } else {
+      console.log('无过期时间设置');
+    }
+    
+    console.log('=== Order useEffect 执行完毕 ===');
+  }, [draftHotelOrder, dispatch, navigate, orderSuccess]);
 
   const handleOrder = async () => {
-    const result = await request('POST', '/order', {
-      hotelId: hotelId,
-      roomId: roomId,
-      checkInDate: startDate,
-      checkOutDate: endDate,
-      totalPrice: selectedRoom.roomTotalPrice,
+    if (!draftHotelOrder) {
+      toast.error('订单信息丢失，请重新选择房间');
+      navigate('/hotels');
+      return;
+    }
+    
+    const { hotelData, roomData, checkInDate, checkOutDate } = draftHotelOrder;
+    
+    if (!roomData || !roomData.roomTotalPrice || roomData.roomTotalPrice <= 0) {
+      toast.error('房间价格信息错误，请联系客服');
+      return;
+    }
+    
+    if (!selectedPaymentType) {
+      toast.error('请选择付款方式');
+      return;
+    }
+
+    const orderData = {
+      hotelId: hotelData.id,
+      roomId: roomData.id,
+      checkInDate: checkInDate,
+      checkOutDate: checkOutDate,
+      totalPrice: roomData.roomTotalPrice,
       payment: {
         method: selectedPaymentType
       }
-    })
+    };
+
+    const result = await request('POST', '/order', orderData);
 
     if (result.success) {
+      // 在清除草稿订单前，保存订单信息用于成功页面显示
+      setSavedOrderInfo({
+        hotelData,
+        roomData,
+        checkInDate,
+        checkOutDate
+      });
       setOrderSuccess(true);
       setOrderData(result.data);
-      toast.success('訂單新增成功！');
-    } else toast.error(`${result.message}`);
+      toast.success('订单创建成功！');
+      setTimeout(() => {
+        dispatch(clearDraftHotelOrder());
+      }, 100);
+    } else {
+      console.error('订单提交失败:', result);
+      toast.error(`订单提交失败: ${result.message || '未知错误'}`);
+    }
   }
 
-  useEffect(() => {
-    if (availableRooms && roomId) {
-      const room = availableRooms.find(room => room.id === roomId)
-      setSelectedRoom(room);
-    }
-  }, [availableRooms, roomId])
 
   const OrderSkeleton = () => (
     <div className='order'>
@@ -71,8 +155,29 @@ const Order = () => {
       </div>
     </div>
   )
+  
+  if (!draftHotelOrder && !orderSuccess) return <OrderSkeleton />
 
-  if (!currentHotel || !selectedRoom) return <OrderSkeleton />
+  const displayData = savedOrderInfo || draftHotelOrder;
+  const { hotelData, roomData, checkInDate, checkOutDate } = displayData || {};
+  
+  if (!displayData) return <OrderSkeleton />
+
+  // 安全的日期格式
+  const formatSafeDate = (dateValue, formatPattern) => {
+    if (!dateValue) return '日期未设置';
+    
+    try {
+      const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+      if (isNaN(date.getTime())) {
+        return '日期格式错误';
+      }
+      return format(date, formatPattern);
+    } catch (error) {
+      console.error('日期格式化错误:', error);
+      return '日期格式错误';
+    }
+  };
 
   return (
     <div className='order'>
@@ -103,34 +208,34 @@ const Order = () => {
                 <h3>訂單摘要</h3>
                 <div className="summary-item">
                   <span>飯店名稱：</span>
-                  <span>{currentHotel.name}</span>
+                  <span>{hotelData.name}</span>
                 </div>
                 <div className="summary-item">
                   <span>房型：</span>
-                  <span>{selectedRoom.title}</span>
+                  <span>{roomData.title}</span>
                 </div>
                 <div className="summary-item">
                   <span>入住日期：</span>
-                  <span>{format(new Date(startDate), "yyyy 年 MM 月 dd 日")}</span>
+                  <span>{formatSafeDate(checkInDate, "yyyy 年 MM 月 dd 日")}</span>
                 </div>
                 <div className="summary-item">
                   <span>退房日期：</span>
-                  <span>{format(new Date(endDate), "yyyy 年 MM 月 dd 日")}</span>
+                  <span>{formatSafeDate(checkOutDate, "yyyy 年 MM 月 dd 日")}</span>
                 </div>
                 <div className="summary-item">
                   <span>總金額：</span>
-                  <span>TWD {orderData?.totalPrice ?? selectedRoom.roomTotalPrice}</span>
+                  <span>TWD {orderData?.totalPrice ?? roomData.roomTotalPrice}</span>
                 </div>
               </div>
             </div>
           ) : (
             <div className="order-content">
               <div className="hotel-info">
-                <div className="hotel-name">{currentHotel.name}</div>
-                <p className="address">{currentHotel.address}</p>
+                <div className="hotel-name">{hotelData.name}</div>
+                <p className="address">{hotelData.address}</p>
                 <div className="inform">
-                  <span className="inform-item">Email: {currentHotel.email}</span>
-                  <span className="inform-item">Tel: {currentHotel.phone}</span>
+                  <span className="inform-item">Email: {hotelData.email}</span>
+                  <span className="inform-item">Tel: {hotelData.phone}</span>
                 </div>
               </div>
 
@@ -141,15 +246,15 @@ const Order = () => {
                     <div className="customer-details">
                       <div className="info-item">
                         <span className="label">姓名：</span>
-                        <span>{userInfo?.realName ?? ''}</span>
+                        <span>{userInfo?.realName ?? userInfo?.real_name ?? ''}</span>
                       </div>
-                      <div className="info-item">
-                        <span className="label">帳號：</span>
+                      <div class="info-item">
+                        <span class="label">帐号：</span>
                         <span>{userInfo?.username ?? ''}</span>
                       </div>
-                      <div className="info-item">
-                        <span className="label">電話：</span>
-                        <span>{userInfo?.phoneNumber ?? ''}</span>
+                      <div class="info-item">
+                        <span class="label">电话：</span>
+                        <span>{userInfo?.phoneNumber ?? userInfo?.phone_number ?? ''}</span>
                       </div>
                       <div className="info-item">
                         <span className="label">地址：</span>
@@ -165,12 +270,12 @@ const Order = () => {
                 <div className="dates">
                   <div className="check-in">
                     <h4>入住時間</h4>
-                    <p>{format(new Date(startDate), "yyyy 年 MM 月 dd 日")}</p>
+                    <p>{formatSafeDate(checkInDate, "yyyy 年 MM 月 dd 日")}</p>
                     <p>下午3:00 - 下午6:00</p>
                   </div>
                   <div className="check-out">
                     <h4>退房時間</h4>
-                    <p>{format(new Date(endDate), "yyyy 年 MM 月 dd 日")}</p>
+                    <p>{formatSafeDate(checkOutDate, "yyyy 年 MM 月 dd 日")}</p>
                     <p>上午11:00前</p>
                   </div>
                 </div>
@@ -178,9 +283,9 @@ const Order = () => {
                   <div className="room-title">已選擇：</div>
                   <div className="room-info">
                     <div className="room-people">
-                      {selectedRoom.title} ({selectedRoom.maxPeople} 位成人)
+                      {roomData.title} ({roomData.maxPeople} 位成人)
                     </div>
-                    {selectedRoom.breakFast && (
+                    {roomData.breakFast && (
                       <div className="breakfast-info">
                         <MdFreeBreakfast className="breakfast-icon" />
                         <span>含早餐</span>
@@ -194,7 +299,7 @@ const Order = () => {
                 <div className="price-title">房價明細</div>
                 <div className="total-price">
                   <div className="booking-policies">
-                    {selectedRoom.paymentOptions.map(policy => (
+                    {roomData.paymentOptions.map(policy => (
                       <div
                         key={policy.id}
                         className={`policy-item ${selectedPaymentType === policy.type ? 'selected' : ''}`}
@@ -210,7 +315,7 @@ const Order = () => {
                   </div>
                   <div className="price-summary">
                     <span>總金額</span>
-                    <span className="price">TWD {selectedRoom.roomTotalPrice}</span>
+                    <span className="price">TWD {roomData.roomTotalPrice}</span>
                   </div>
                 </div>
                 <button

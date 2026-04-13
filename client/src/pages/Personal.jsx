@@ -14,6 +14,7 @@ import { faCircleRight } from '@fortawesome/free-solid-svg-icons'
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux'
 import { logOut, setUserInfo } from '../redux/userStore'
+import { fetchUserOrders } from '../redux/orderStore'
 import { persistor } from '../redux/storeConfig'
 import { request } from '../utils/apiService'
 import dayjs from '../utils/dayjs-config'
@@ -23,13 +24,11 @@ const Personal = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { userInfo } = useSelector(state => state.user);
+  const { orders, flightOrders, flashSaleOrders, loading: orderLoading } = useSelector(state => state.order);
   const username = userInfo?.username || '';
   const email = userInfo?.email || '';
 
-  // useState
-  const [orders, setOrders] = useState([])
-  const [flightOrders, setFlightOrders] = useState([])
-  const [flashSaleOrders, setFlashSaleOrders] = useState([]);
+  // 本地狀態（非訂單相關）
   const [password, setPassword] = useState('')
   const [realName, setRealName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -86,16 +85,11 @@ const Personal = () => {
         return;
       }
       
-      const result = await request('GET', `/users/${userInfo.id}`);
-      if (result.success) {
-        const data = result.data;
-        setOrders(data.allOrder || []);
-        setFlightOrders(data.allFlightOrder || []);
-        setFlashSaleOrders(data.allFlashSaleOrder || []);
-      } else toast.error(`${result.message}`)
+      // 使用Redux fetchUserOrders代替直接API請求
+      dispatch(fetchUserOrders(userInfo.id));
     };
     fetchUserData();
-  }, [userInfo?.id])
+  }, [userInfo?.id, dispatch])
 
   return (
     <div className="personalWrapper">

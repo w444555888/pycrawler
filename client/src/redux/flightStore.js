@@ -1,0 +1,234 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { request } from '../utils/apiService';
+import { toast } from 'react-toastify';
+
+// 异步获取航班搜索结果
+export const fetchFlights = createAsyncThunk(
+  'flight/fetchFlights',
+  async (searchParams, { rejectWithValue }) => {
+    try {
+      const result = await request('GET', `/flight/search?${searchParams.toString()}`);
+      return result.success ? result.data : rejectWithValue(result.message);
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// 异步获取机场建议
+export const fetchAirportSuggestions = createAsyncThunk(
+  'flight/fetchAirportSuggestions',
+  async ({ keyword, type }, { rejectWithValue }) => {
+    try {
+      const result = await request('GET', `/flight/airports/suggestions?keyword=${keyword}`);
+      return result.success ? { data: result.data, type } : rejectWithValue(result.message);
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+const flightStore = createSlice({
+  name: 'flight',
+  initialState: {
+    // 搜索参数
+    searchParams: {
+      departureCity: '',
+      departureIata: '',
+      arrivalCity: '',
+      arrivalIata: '',
+      tripType: 'roundtrip',
+      departDate: null,
+      returnDate: null,
+    },
+    
+    // 机场建议
+    departureSuggestions: {
+      items: [],
+      loading: false,
+      showSuggestions: false,
+      keyword: '',
+      pagination: { current: 1, total: 0 }
+    },
+    
+    arrivalSuggestions: {
+      items: [],
+      loading: false,
+      showSuggestions: false,
+      keyword: '',
+      pagination: { current: 1, total: 0 }
+    },
+    
+    // 搜索结果
+    searchResults: [],
+    searchLoading: false,
+    searchError: null,
+    
+    // 选中的航班（用于预订）
+    selectedFlight: null,
+    
+    // 分页
+    pagination: {
+      current: 1,
+      total: 0,
+      pageSize: 10
+    }
+  },
+  
+  reducers: {
+    // 设置搜索参数
+    setSearchParams: (state, action) => {
+      state.searchParams = { ...state.searchParams, ...action.payload };
+    },
+    
+    // 设置出发城市相关
+    setDepartureCity: (state, action) => {
+      state.searchParams.departureCity = action.payload;
+    },
+    
+    setDepartureIata: (state, action) => {
+      state.searchParams.departureIata = action.payload;
+    },
+    
+    setDepartureSuggestions: (state, action) => {
+      state.departureSuggestions.items = action.payload;
+    },
+    
+    setShowDepartureSuggestions: (state, action) => {
+      state.departureSuggestions.showSuggestions = action.payload;
+    },
+    
+    // 设置抵达城市相关
+    setArrivalCity: (state, action) => {
+      state.searchParams.arrivalCity = action.payload;
+    },
+    
+    setArrivalIata: (state, action) => {
+      state.searchParams.arrivalIata = action.payload;
+    },
+    
+    setArrivalSuggestions: (state, action) => {
+      state.arrivalSuggestions.items = action.payload;
+    },
+    
+    setShowArrivalSuggestions: (state, action) => {
+      state.arrivalSuggestions.showSuggestions = action.payload;
+    },
+    
+    // 选择航班（保存到Redux和sessionStorage）
+    setSelectedFlight: (state, action) => {
+      state.selectedFlight = action.payload;
+      // 同时保存到sessionStorage避免页面刷新丢失
+      try {
+        sessionStorage.setItem('selectedFlight', JSON.stringify(action.payload));
+      } catch (e) {
+        console.warn('无法保存航班信息到sessionStorage:', e);
+      }
+    },
+    
+    // 从sessionStorage恢复航班信息
+    restoreSelectedFlight: (state) => {
+      try {
+        const cached = sessionStorage.getItem('selectedFlight');
+        if (cached) {
+          state.selectedFlight = JSON.parse(cached);
+        }
+      } catch (e) {
+        console.warn('无法从sessionStorage恢复航班信息:', e);
+      }
+    },
+    
+    // 清除选中的航班
+    clearSelectedFlight: (state) => {
+      state.selectedFlight = null;
+      try {
+        sessionStorage.removeItem('selectedFlight');
+      } catch (e) {
+        console.warn('无法清除sessionStorage中的航班信息:', e);
+      }
+    },
+    
+    // 清除搜索结果
+    clearSearchResults: (state) => {
+      state.searchResults = [];
+      state.searchError = null;
+      state.pagination = { current: 1, total: 0, pageSize: 10 };
+    },
+    
+    // 重置所有状态
+    resetFlightStore: (state) => {
+      Object.assign(state, flightStore.getInitialState());
+      // 不清除sessionStorage，保留用户的航班选择
+    }
+  },
+  
+  extraReducers: (builder) => {
+    builder
+      // 航班搜索
+      .addCase(fetchFlights.pending, (state) => {
+        state.searchLoading = true;
+        state.searchError = null;
+      })
+      .addCase(fetchFlights.fulfilled, (state, action) => {
+        state.searchLoading = false;
+        state.searchResults = action.payload.flights || [];
+        state.pagination = action.payload.pagination || { current: 1, total: 0, pageSize: 10 };
+        toast.success(`找到 ${action.payload.flights?.length || 0} 个航班`);
+      })
+      .addCase(fetchFlights.rejected, (state, action) => {
+        state.searchLoading = false;
+        state.searchError = action.payload || '搜索航班时出错';
+        toast.error(state.searchError);
+      })
+      
+      // 机场建议
+      .addCase(fetchAirportSuggestions.pending, (state, action) => {
+        const { type } = action.meta.arg;
+        if (type === 'departure') {
+          state.departureSuggestions.loading = true;
+        } else {
+          state.arrivalSuggestions.loading = true;
+        }
+      })
+      .addCase(fetchAirportSuggestions.fulfilled, (state, action) => {
+        const { type } = action.payload;
+        if (type === 'departure') {
+          state.departureSuggestions.loading = false;
+          state.departureSuggestions.items = action.payload.data.suggestions || [];
+          state.departureSuggestions.pagination = action.payload.data.pagination || { current: 1, total: 0 };
+        } else {
+          state.arrivalSuggestions.loading = false;
+          state.arrivalSuggestions.items = action.payload.data.suggestions || [];
+          state.arrivalSuggestions.pagination = action.payload.data.pagination || { current: 1, total: 0 };
+        }
+      })
+      .addCase(fetchAirportSuggestions.rejected, (state, action) => {
+        const { type } = action.meta.arg;
+        if (type === 'departure') {
+          state.departureSuggestions.loading = false;
+        } else {
+          state.arrivalSuggestions.loading = false;
+        }
+        console.error('获取机场建议失败:', action.payload);
+      });
+  }
+});
+
+export const {
+  setSearchParams,
+  setDepartureCity,
+  setDepartureIata,
+  setDepartureSuggestions,
+  setShowDepartureSuggestions,
+  setArrivalCity,
+  setArrivalIata,
+  setArrivalSuggestions,
+  setShowArrivalSuggestions,
+  setSelectedFlight,
+  restoreSelectedFlight,
+  clearSelectedFlight,
+  clearSearchResults,
+  resetFlightStore
+} = flightStore.actions;
+
+export default flightStore.reducer;

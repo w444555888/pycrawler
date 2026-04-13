@@ -367,6 +367,15 @@ async def list_hotels(
                     }
                     room_inventories.append(inventory_data)
                 
+                # 計算房間總價格（如果有日期範圍）
+                room_total_price = 0.0
+                if start_date and end_date:
+                    try:
+                        room_total_price = room.calculate_total_price(start_date, end_date)
+                    except Exception as e:
+                        print(f"計算房間總價格時出錯: {e}")
+                        room_total_price = 0.0
+                
                 room_data = {
                     "id": room.id,
                     "hotelId": room.hotel_id,
@@ -379,6 +388,7 @@ async def list_hotels(
                     "pricing": room.pricing,
                     "holidays": room.holidays,
                     "inventory": room_inventories,
+                    "roomTotalPrice": room_total_price,  # 添加總價格字段
                     "createdAt": room.created_at,
                     "updatedAt": room.updated_at
                 }

@@ -13,18 +13,45 @@ import dayjs from '../utils/dayjs-config';
 import formatDuration from '../utils/formatDuration';
 import { toast } from 'react-toastify'
 import EmptyState from '../subcomponents/EmptyState'
+import { useDispatch, useSelector } from 'react-redux'
+import { 
+  fetchFlights,
+  fetchAirportSuggestions,
+  setSelectedFlight,
+  setDepartureCity,
+  setArrivalCity,
+  setDepartureIata,
+  setArrivalIata,
+  resetFlightStore,
+  setShowDepartureSuggestions,
+  setShowArrivalSuggestions
+} from '../redux/flightStore'
 
 
 const Flight = () => {
     const navigate = useNavigate()
+    const dispatch = useDispatch()
     const [searchParams, setSearchParams] = useSearchParams();
-    const [arrivalCity, setArrivalCity] = useState("")
-    const [departureCity, setDepartureCity] = useState("")
-    const [departureIata, setDepartureIata] = useState("")
-    const [arrivalIata, setArrivalIata] = useState("")
-    const [tripType, setTripType] = useState("roundtrip")  // "roundtrip" 或 "oneway"
+ 
+    // Redux状态
+    const { 
+        flights,
+        selectedFlight,
+        departureCity,
+        arrivalCity,
+        departureIata,
+        arrivalIata,
+        departureSuggestions,
+        arrivalSuggestions,
+        showDepartureSuggestions,
+        showArrivalSuggestions,
+        loading,
+        pagination
+    } = useSelector(state => state.flight)
+    
+    // 本地状态（不是Redux管理的）
+    const [tripType, setTripType] = useState("roundtrip")
     const [openDate, setOpenDate] = useState(false)
-    const [flights, setFlights] = useState([])
     const [dates, setDates] = useState([
         {
             startDate: null,
@@ -32,52 +59,27 @@ const Flight = () => {
             key: 'selection'
         }
     ])
-    // 地點搜尋相關狀態
-    const [departureSuggestions, setDepartureSuggestions] = useState([])
-    const [arrivalSuggestions, setArrivalSuggestions] = useState([])
-    const [showDepartureSuggestions, setShowDepartureSuggestions] = useState(false)
-    const [showArrivalSuggestions, setShowArrivalSuggestions] = useState(false)
-    const [loadingDeparture, setLoadingDeparture] = useState(false)
-    const [loadingArrival, setLoadingArrival] = useState(false)
+    
     const departureInputRef = useRef(null)
     const arrivalInputRef = useRef(null)
     const departureContainerRef = useRef(null)
     const arrivalContainerRef = useRef(null)
     const departureSuggestionsRef = useRef(null)
     const arrivalSuggestionsRef = useRef(null)
-    
-    // 分頁相關狀態
-    const [departureCurrentPage, setDepartureCurrentPage] = useState(1)
-    const [departureKeyword, setDepartureKeyword] = useState("")
-    const [departureTotalPages, setDepartureTotalPages] = useState(0)
-    const [departureLodingMore, setDepartureLoadingMore] = useState(false)
-    
-    const [arrivalCurrentPage, setArrivalCurrentPage] = useState(1)
-    const [arrivalKeyword, setArrivalKeyword] = useState("")
-    const [arrivalTotalPages, setArrivalTotalPages] = useState(0)
-    const [arrivalLoadingMore, setArrivalLoadingMore] = useState(false)
-    
-    // 航班搜尋分頁相關狀態
-    const [flightCurrentPage, setFlightCurrentPage] = useState(1)
-    const [flightTotalPages, setFlightTotalPages] = useState(0)
-    const [flightLoadingMore, setFlightLoadingMore] = useState(false)
-    const [flightSearchParams, setFlightSearchParams] = useState(null)
     const flightListRef = useRef(null)
 
-
-
     useEffect(() => {
-        setFlights([])
+        dispatch(resetFlightStore())
     }, [])
 
     // 點擊外部關閉建議列表
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (departureContainerRef.current && !departureContainerRef.current.contains(e.target)) {
-                setShowDepartureSuggestions(false)
+                dispatch(setShowDepartureSuggestions(false))
             }
             if (arrivalContainerRef.current && !arrivalContainerRef.current.contains(e.target)) {
-                setShowArrivalSuggestions(false)
+                dispatch(setShowArrivalSuggestions(false))
             }
         }
 
@@ -88,74 +90,54 @@ const Flight = () => {
     // 非防抖版本的搜尋函數
     const performDepartureSearch = async (keyword) => {
         if (keyword.trim().length < 2) {
-            setDepartureSuggestions([])
             return
         }
-        setLoadingDeparture(true)
-        setDepartureKeyword(keyword)
-        setDepartureCurrentPage(1)
-        
-        const result = await request('GET', `/flight/locations/search?keyword=${keyword}&page=1&limit=10`)
-        if (result.success) {
-            setDepartureSuggestions(result.data.items || [])
-            setDepartureTotalPages(result.data.pagination?.totalPages || 0)
-        } else {
-            setDepartureSuggestions([])
-            setDepartureTotalPages(0)
-        }
-        setLoadingDeparture(false)
+        dispatch(fetchAirportSuggestions({ type: 'departure', keyword, page: 1, reset: true }))
     }
 
     const performArrivalSearch = async (keyword) => {
         if (keyword.trim().length < 2) {
-            setArrivalSuggestions([])
             return
         }
-        setLoadingArrival(true)
-        setArrivalKeyword(keyword)
-        setArrivalCurrentPage(1)
-        
-        const result = await request('GET', `/flight/locations/search?keyword=${keyword}&page=1&limit=10`)
-        if (result.success) {
-            setArrivalSuggestions(result.data.items || [])
-            setArrivalTotalPages(result.data.pagination?.totalPages || 0)
-        } else {
-            setArrivalSuggestions([])
-            setArrivalTotalPages(0)
-        }
-        setLoadingArrival(false)
+        dispatch(fetchAirportSuggestions({ type: 'arrival', keyword, page: 1, reset: true }))
     }
 
     // 加載更多函數
     const loadMoreDeparture = async () => {
-        if (departureLodingMore || departureCurrentPage >= departureTotalPages || !departureKeyword) return
+        // 檢查是否有loading和pagination狀態，使用安全訪問
+        if (loading?.departure || (pagination?.departure && pagination.departure.currentPage >= pagination.departure.totalPages)) return
         
-        setDepartureLoadingMore(true)
-        const nextPage = departureCurrentPage + 1
+        const keyword = pagination?.departure?.keyword || ''
+        const currentPage = pagination?.departure?.currentPage || 1
         
-        const result = await request('GET', `/flight/locations/search?keyword=${departureKeyword}&page=${nextPage}&limit=10`)
-        if (result.success) {
-            setDepartureSuggestions(prev => [...prev, ...(result.data.items || [])])
-            setDepartureCurrentPage(nextPage)
+        if (keyword) {
+            dispatch(fetchAirportSuggestions({ 
+                type: 'departure', 
+                keyword: keyword, 
+                page: currentPage + 1, 
+                reset: false 
+            }))
         }
-        setDepartureLoadingMore(false)
     }
 
     const loadMoreArrival = async () => {
-        if (arrivalLoadingMore || arrivalCurrentPage >= arrivalTotalPages || !arrivalKeyword) return
+        // 檢查是否有loading和pagination狀態，使用安全訪問
+        if (loading?.arrival || (pagination?.arrival && pagination.arrival.currentPage >= pagination.arrival.totalPages)) return
         
-        setArrivalLoadingMore(true)
-        const nextPage = arrivalCurrentPage + 1
+        const keyword = pagination?.arrival?.keyword || ''
+        const currentPage = pagination?.arrival?.currentPage || 1
         
-        const result = await request('GET', `/flight/locations/search?keyword=${arrivalKeyword}&page=${nextPage}&limit=10`)
-        if (result.success) {
-            setArrivalSuggestions(prev => [...prev, ...(result.data.items || [])])
-            setArrivalCurrentPage(nextPage)
+        if (keyword) {
+            dispatch(fetchAirportSuggestions({ 
+                type: 'arrival', 
+                keyword: keyword, 
+                page: currentPage + 1, 
+                reset: false 
+            }))
         }
-        setArrivalLoadingMore(false)
     }
 
-    // 處理滾動事件
+    // 處理滾動
     const handleDepartureSuggestionsScroll = () => {
         if (!departureSuggestionsRef.current) return
         
@@ -180,18 +162,16 @@ const Flight = () => {
 
     // 選擇出發地
     const handleSelectDeparture = (location) => {
-        setDepartureCity(location.name)
-        setDepartureIata(location.iataCode)
-        setShowDepartureSuggestions(false)
-        setDepartureSuggestions([])
+        dispatch(setDepartureCity(location.name))
+        dispatch(setDepartureIata(location.iataCode))
+        dispatch(setShowDepartureSuggestions(false))
     }
 
     // 選擇目的地
     const handleSelectArrival = (location) => {
-        setArrivalCity(location.name)
-        setArrivalIata(location.iataCode)
-        setShowArrivalSuggestions(false)
-        setArrivalSuggestions([])
+        dispatch(setArrivalCity(location.name))
+        dispatch(setArrivalIata(location.iataCode))
+        dispatch(setShowArrivalSuggestions(false))
     }
 
 
@@ -228,30 +208,24 @@ const Flight = () => {
         }
 
         setSearchParams(params);
-        setFlightCurrentPage(1)
-        setFlightSearchParams(params)
-        
-        const result = await request('GET', `/flight/search?${new URLSearchParams({...params, page: 1, limit: 10}).toString()}`);
-        if (result.success) {
-            setFlights(result.data.items || []);
-            setFlightTotalPages(result.data.pagination?.totalPages || 0)
-            toast.success('搜索完成');
-        } else toast.error(result.message);
+        dispatch(fetchFlights({ params, page: 1 }))
     };
 
     // 加載更多航班
     const loadMoreFlights = async () => {
-        if (flightLoadingMore || flightCurrentPage >= flightTotalPages || !flightSearchParams) return
+        // 檢查是否有loading狀態和分頁資訊
+        if (loading?.flight || (pagination?.flight && pagination.flight.currentPage >= pagination.flight.totalPages)) return
         
-        setFlightLoadingMore(true)
-        const nextPage = flightCurrentPage + 1
+        const searchParams = pagination?.flight?.searchParams
+        const currentPage = pagination?.flight?.currentPage || 1
         
-        const result = await request('GET', `/flight/search?${new URLSearchParams({...flightSearchParams, page: nextPage, limit: 10}).toString()}`);
-        if (result.success) {
-            setFlights(prev => [...prev, ...(result.data.items || [])])
-            setFlightCurrentPage(nextPage)
+        if (searchParams) {
+            dispatch(fetchFlights({ 
+                params: searchParams, 
+                page: currentPage + 1, 
+                append: true 
+            }))
         }
-        setFlightLoadingMore(false)
     }
 
     // 處理航班列表滾動
@@ -266,13 +240,14 @@ const Flight = () => {
 
 
     const handleBookingFlightRouter = (flightData) => {
-        navigate(`/bookingFlight`, {
-            state: {
-                flightInfo: flightData.flightInfo,
-                price: flightData.price,
-                tripType: flightData.tripType
-            }
-        });
+        // 使用Redux保存选择的航班数据
+        dispatch(setSelectedFlight({
+            flightInfo: flightData.flightInfo,
+            price: flightData.price,
+            tripType: flightData.tripType
+        }));
+        
+        navigate(`/bookingFlight`);
     };
 
 
@@ -314,22 +289,22 @@ const Flight = () => {
                                 type="text"
                                 placeholder="出發地"
                                 value={departureCity}
-                                onChange={(e) => {
-                                    setDepartureCity(e.target.value)
-                                    setDepartureIata("")
+                                onChange={e => {
+                                    dispatch(setDepartureCity(e.target.value))
+                                    dispatch(setDepartureIata(""))
                                     searchDeparture(e.target.value)
-                                    setShowDepartureSuggestions(true)
+                                    dispatch(setShowDepartureSuggestions(true))
                                 }}
-                                onFocus={() => setShowDepartureSuggestions(true)}
+                                onFocus={() => dispatch(setShowDepartureSuggestions(true))}
                                 className="searchInput"
                             />
-                            {showDepartureSuggestions && (departureSuggestions.length > 0 || loadingDeparture) && (
+                            {showDepartureSuggestions && (departureSuggestions.length > 0 || loading?.departure) && (
                                 <div 
                                     className="suggestionsList"
                                     ref={departureSuggestionsRef}
                                     onScroll={handleDepartureSuggestionsScroll}
                                 >
-                                    {loadingDeparture && departureSuggestions.length === 0 ? (
+                                    {loading?.departure && departureSuggestions.length === 0 ? (
                                         <div className="suggestionItem">搜尋中...</div>
                                     ) : (
                                         <>
@@ -345,7 +320,7 @@ const Flight = () => {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {departureLodingMore && (
+                                            {loading?.departureMore && (
                                                 <div className="suggestionItem loading">加載中...</div>
                                             )}
                                         </>
@@ -360,22 +335,22 @@ const Flight = () => {
                                 type="text"
                                 placeholder="目的地"
                                 value={arrivalCity}
-                                onChange={(e) => {
-                                    setArrivalCity(e.target.value)
-                                    setArrivalIata("")
+                                onChange={e => {
+                                    dispatch(setArrivalCity(e.target.value))
+                                    dispatch(setArrivalIata(""))
                                     searchArrival(e.target.value)
-                                    setShowArrivalSuggestions(true)
+                                    dispatch(setShowArrivalSuggestions(true))
                                 }}
-                                onFocus={() => setShowArrivalSuggestions(true)}
+                                onFocus={() => dispatch(setShowArrivalSuggestions(true))}
                                 className="searchInput"
                             />
-                            {showArrivalSuggestions && (arrivalSuggestions.length > 0 || loadingArrival) && (
+                            {showArrivalSuggestions && (arrivalSuggestions.length > 0 || loading?.arrival) && (
                                 <div 
                                     className="suggestionsList"
                                     ref={arrivalSuggestionsRef}
                                     onScroll={handleArrivalSuggestionsScroll}
                                 >
-                                    {loadingArrival && arrivalSuggestions.length === 0 ? (
+                                    {loading?.arrival && arrivalSuggestions.length === 0 ? (
                                         <div className="suggestionItem">搜尋中...</div>
                                     ) : (
                                         <>
@@ -391,7 +366,7 @@ const Flight = () => {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {arrivalLoadingMore && (
+                                            {loading?.arrivalMore && (
                                                 <div className="suggestionItem loading">加載中...</div>
                                             )}
                                         </>
@@ -426,8 +401,8 @@ const Flight = () => {
                                                 startDate: date,
                                                 endDate: null,
                                                 key: 'selection'
-                                            }])
-                                            setOpenDate(false)
+                                            }]);
+                                            setOpenDate(false);
                                         }}
                                         minDate={new Date()}
                                         className="date"
@@ -521,7 +496,8 @@ const Flight = () => {
                                     </div>
                                 );
                             })}
-                            {flightLoadingMore && (
+                            {/* 根據實際loading狀態顯示加載動畫 */}
+                            {loading?.flight && (
                                 <div className="flightItem loading">
                                     <div className="loadingText">加載中...</div>
                                 </div>

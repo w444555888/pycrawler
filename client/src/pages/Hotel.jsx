@@ -41,6 +41,7 @@ import {
   setCurrentHotel,
   setAvailableRooms,
 } from "../redux/hotelStore"
+import { setDraftHotelOrder } from "../redux/orderStore"
 import EmptyState from "../subcomponents/EmptyState"
 import LeafletMapPicker from "../utils/LeafletMapPicker"
 
@@ -151,7 +152,21 @@ const Hotel = () => {
   }
 
   const handleNavigateToOrder = async (roomId) => {
-    navigate(`/order/${startDate}/${endDate}/${hotelId}/${roomId}`)
+    const selectedRoom = availableRooms.find(room => room.id === roomId);
+    if (!selectedRoom || !currentHotel) {
+      console.error('未找到酒店或房间数据');
+      return;
+    }
+
+    const draftOrder = {
+      hotelData: currentHotel,
+      roomData: selectedRoom,
+      checkInDate: startDate,
+      checkOutDate: endDate,
+      createdAt: new Date().toISOString()
+    };
+    dispatch(setDraftHotelOrder(draftOrder));
+    navigate('/order');
   }
 
   const facilitiesList = [
@@ -187,7 +202,7 @@ const Hotel = () => {
         date: dateStr,
         totalRooms: 0,
         bookedRooms: 0,
-        remainingRooms: 0,
+        availableRooms: 0,
         missing: true,
       };
     });
@@ -381,8 +396,8 @@ const Hotel = () => {
                   <tbody>
                     {availableRooms.map((e) => {
                       const fullInventory = getFullInventory(e, startDate, endDate)
-                      const allSoldOut = fullInventory.every(i => i.remainingRooms === 0);
-                      const isSoldOut = fullInventory.some(i => i.remainingRooms === 0);
+                      const allSoldOut = fullInventory.every(i => i.availableRooms === 0);
+                      const isSoldOut = fullInventory.some(i => i.availableRooms === 0);
                       return fullInventory.map((inv, idx) => (
                         <tr key={`${e.id}-${inv.date}`}>
                           {/* 房型 */}
@@ -418,7 +433,7 @@ const Hotel = () => {
                           <td className="roomQty">{inv.missing ? (
                             <span className="status soldout">已滿房</span>
                           ) : (
-                            <span className="status available">剩 {inv.remainingRooms} 間</span>
+                            <span className="status available">剩 {inv.availableRooms} 間</span>
                           )}</td>
 
                           {/* 訂購須知（含總價與付款方式） */}
