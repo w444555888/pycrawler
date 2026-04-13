@@ -1,13 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { request } from '../utils/apiService';
-import { toast } from 'react-toastify';
 
 
 export const fetchSingleHotel = createAsyncThunk(
   'hotel/fetchSingleHotel',
   async (searchParams, { rejectWithValue }) => {
-    const result = await request('GET', `/hotels/search?${searchParams.toString()}`)
-    return result.success ? result.data[0] : rejectWithValue(result.message);
+    try {
+      const result = await request('GET', `/hotels/search?${searchParams.toString()}`)
+      return result.success ? result.data[0] : rejectWithValue(result.message);
+    } catch (error) {
+      return rejectWithValue(error.message || '網路錯誤');
+    }
   }
 )
 
@@ -26,6 +29,14 @@ const hotelStore = createSlice({
     },
     setAvailableRooms: (state, action) => {
       state.availableRooms = action.payload
+    },
+    clearHotelData: (state) => {
+      state.currentHotel = null
+      state.availableRooms = []
+      state.error = null
+    },
+    clearError: (state) => {
+      state.error = null
     }
   },
   extraReducers: (builder) => {
@@ -36,18 +47,19 @@ const hotelStore = createSlice({
       })
       .addCase(fetchSingleHotel.fulfilled, (state, action) => {
         state.loading = false
+        state.error = null
         state.currentHotel = action.payload
-        state.availableRooms = Array.isArray(action.payload?.availableRooms) ? action.payload.availableRooms : [];
-        toast.success('成功獲取飯店資料')
+        state.availableRooms = Array.isArray(action.payload?.availableRooms) ? action.payload.availableRooms : []
       })
       .addCase(fetchSingleHotel.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload || '獲取飯店資料失敗'
-        toast.error(action.payload || '獲取飯店資料失敗')
+        state.currentHotel = null
+        state.availableRooms = []
+        state.error = action.payload || action.error?.message || '獲取飯店資料失敗'
       })
   }
 })
 
 
-export const { setCurrentHotel, setAvailableRooms } = hotelStore.actions;
+export const { setCurrentHotel, setAvailableRooms, clearHotelData, clearError } = hotelStore.actions;
 export default hotelStore.reducer;

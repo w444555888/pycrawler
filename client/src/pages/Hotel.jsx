@@ -26,6 +26,7 @@ import Footer from "../components/Footer"
 import Navbar from "../components/Navbar"
 import { request } from "../utils/apiService"
 import { gsap } from "gsap"
+import { toast } from "react-toastify"
 import "./hotel.scss"
 import {
   useLocation,
@@ -40,6 +41,8 @@ import {
   fetchSingleHotel,
   setCurrentHotel,
   setAvailableRooms,
+  clearHotelData,
+  clearError,
 } from "../redux/hotelStore"
 import { setDraftHotelOrder } from "../redux/orderStore"
 import EmptyState from "../subcomponents/EmptyState"
@@ -80,8 +83,37 @@ const Hotel = () => {
 
   // 獲取酒店數據
   useEffect(() => {
-    dispatch(fetchSingleHotel(searchParams))
+    const handleFetchHotel = async () => {
+      try {
+        const result = await dispatch(fetchSingleHotel(searchParams))
+        if (fetchSingleHotel.fulfilled.match(result)) {
+          toast.success('成功獲取飯店資料')
+        }
+      } catch (err) {
+        console.error('Fetch hotel failed:', err)
+      }
+    }
+    handleFetchHotel()
   }, [searchParams, dispatch])
+
+  // 處理錯誤狀態的 toast 顯示
+  useEffect(() => {
+    if (error) {
+      toast.error(error)
+      // 5秒後自動清除錯誤
+      const timer = setTimeout(() => {
+        dispatch(clearError())
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [error, dispatch])
+
+  // 組件卸載時清理數據
+  useEffect(() => {
+    return () => {
+      dispatch(clearHotelData())
+    }
+  }, [dispatch])
 
   // 晚數
   useEffect(() => {
@@ -208,7 +240,20 @@ const Hotel = () => {
     });
   };
 
-  if (!currentHotel)
+  // 顯示加載狀態
+  if (loading) {
+    return (
+      <div className="empty-state-container">
+        <EmptyState
+          title="載入中..."
+          description="正在獲取飯店資料，請稍候"
+        />
+      </div>
+    )
+  }
+
+  // 顯示無數據狀態
+  if (!currentHotel) {
     return (
       <div className="empty-state-container">
         <EmptyState
@@ -217,6 +262,7 @@ const Hotel = () => {
         />
       </div>
     )
+  }
 
   return (
     <div className="hotel">

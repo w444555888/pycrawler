@@ -45,7 +45,7 @@ async def route_update_room_inventory(payload: dict, session: AsyncSession = Dep
 async def route_update_room(room_id: int, data: dict, session: AsyncSession = Depends(get_session)):
     return await update_room(room_id, data, session)
 
-# 刪除特定房型資料（根據 room_id(node版本沒有)
+# 刪除特定房型資料
 @router.delete("/{room_id}")
 async def route_delete_room(room_id: int, session: AsyncSession = Depends(get_session)):
     return await delete_room(room_id, session)

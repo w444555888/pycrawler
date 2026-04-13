@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { request } from '../utils/apiService';
-import { toast } from 'react-toastify';
 
 // 异步获取航班搜索结果
 export const fetchFlights = createAsyncThunk(
@@ -76,11 +75,6 @@ const flightStore = createSlice({
   },
   
   reducers: {
-    // 设置搜索参数
-    setSearchParams: (state, action) => {
-      state.searchParams = { ...state.searchParams, ...action.payload };
-    },
-    
     // 设置出发城市相关
     setDepartureCity: (state, action) => {
       state.searchParams.departureCity = action.payload;
@@ -89,15 +83,11 @@ const flightStore = createSlice({
     setDepartureIata: (state, action) => {
       state.searchParams.departureIata = action.payload;
     },
-    
-    setDepartureSuggestions: (state, action) => {
-      state.departureSuggestions.items = action.payload;
-    },
-    
+
     setShowDepartureSuggestions: (state, action) => {
       state.departureSuggestions.showSuggestions = action.payload;
     },
-    
+
     // 设置抵达城市相关
     setArrivalCity: (state, action) => {
       state.searchParams.arrivalCity = action.payload;
@@ -106,11 +96,7 @@ const flightStore = createSlice({
     setArrivalIata: (state, action) => {
       state.searchParams.arrivalIata = action.payload;
     },
-    
-    setArrivalSuggestions: (state, action) => {
-      state.arrivalSuggestions.items = action.payload;
-    },
-    
+
     setShowArrivalSuggestions: (state, action) => {
       state.arrivalSuggestions.showSuggestions = action.payload;
     },
@@ -173,12 +159,10 @@ const flightStore = createSlice({
         state.searchLoading = false;
         state.searchResults = action.payload.flights || [];
         state.pagination = action.payload.pagination || { current: 1, total: 0, pageSize: 10 };
-        toast.success(`找到 ${action.payload.flights?.length || 0} 个航班`);
       })
       .addCase(fetchFlights.rejected, (state, action) => {
         state.searchLoading = false;
         state.searchError = action.payload || '搜索航班时出错';
-        toast.error(state.searchError);
       })
       
       // 机场建议
@@ -215,19 +199,14 @@ const flightStore = createSlice({
 });
 
 export const {
-  setSearchParams,
   setDepartureCity,
   setDepartureIata,
-  setDepartureSuggestions,
   setShowDepartureSuggestions,
   setArrivalCity,
   setArrivalIata,
-  setArrivalSuggestions,
   setShowArrivalSuggestions,
   setSelectedFlight,
   restoreSelectedFlight,
-  clearSelectedFlight,
-  clearSearchResults,
   resetFlightStore
 } = flightStore.actions;
 
