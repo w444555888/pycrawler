@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select 
-from app.models.user import User, UserResponse
+from app.models.user import User
 from app.models.order import Order
 from app.models.real_flight_orders import RealFlightOrders
 from app.utils.response import success
