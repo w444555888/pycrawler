@@ -1,11 +1,3 @@
-/*
- * @Author: w444555888 w444555888@yahoo.com.tw
- * @Date: 2024-07-18 22:29:14
- * @LastEditors: w444555888 w444555888@yahoo.com.tw
- * @LastEditTime: 2024-07-18 22:29:24
- * @FilePath: \my-app\src\redux\storeConfig.js
- * @Description: Redux Store配置中心 - 优化版本
- */
 import { configureStore, combineReducers } from '@reduxjs/toolkit'
 import userReducer from './userStore'
 import hotelReducer from './hotelStore'
@@ -15,18 +7,15 @@ import orderReducer from './orderStore'
 import storage from 'redux-persist/lib/storage' 
 import { persistReducer, persistStore } from 'redux-persist'
 
-// 优化持久化配置
-const persistConfig = {
-  key: 'root',
+const userPersistConfig = {
+  key: 'user',
   storage,
-  whitelist: ['user'],  // 保留用户登录状态
 }
 
-// 单独配置需要持久化searchParams的store
 const flightPersistConfig = {
   key: 'flight',
   storage,
-  whitelist: ['searchParams'],  // 只持久化搜索参数，避免缓存过期数据
+  whitelist: ['searchParams'], 
 }
 
 const hotelPersistConfig = {
@@ -36,24 +25,28 @@ const hotelPersistConfig = {
 }
 
 const rootReducer = combineReducers({
-  user: userReducer,
+  user: persistReducer(userPersistConfig, userReducer),
   hotel: persistReducer(hotelPersistConfig, hotelReducer),
   flight: persistReducer(flightPersistConfig, flightReducer), 
-  order: orderReducer, // 订单状态不持久化，使用sessionStorage
+  order: orderReducer, // 订单状态不持久化
 })
 
-const persistedReducer = persistReducer(persistConfig, rootReducer)
-
 const store = configureStore({
-  reducer: persistedReducer,
+  reducer: rootReducer,
   devTools: process.env.NODE_ENV !== 'production',
   // 瀏覽器安裝Redux DevTools(查看狀態管理)
   
-  // 优化middleware配置
+  // 優化middleware配置
+  // Redux序列化检查：state和action必须可被JSON.stringify()转换
+  // 不可序列化的类型：function、Promise、Date、class实例等
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
+        // 忽略redux-persist的action，因为包含function引用等不可序列化数据
+        // persist/PERSIST: 初始化持久化时的action，包含register函数
+        // persist/REHYDRATE: 从localStorage恢复数据时的action，包含rehydrate函数  
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        // 忽略state中redux-persist添加的内部元数据
         ignoredPaths: ['_persist'],
       },
     }),
