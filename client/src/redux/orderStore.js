@@ -22,6 +22,9 @@ const orderStore = createSlice({
     
     // 酒店訂單数据（供 Personal.jsx 使用）
     hotelOrders: [],
+    orders: [],
+    flightOrders: [],
+    flashSaleOrders: [],
     
     // 数据获取状態
     loading: false,
@@ -81,7 +84,11 @@ const orderStore = createSlice({
       })
       .addCase(fetchUserOrders.fulfilled, (state, action) => {
         state.loading = false;
-        state.hotelOrders = action.payload.allOrder || [];
+        const userData = action.payload;
+        state.hotelOrders = userData.allOrder || [];
+        state.orders = userData.allOrder || [];
+        state.flightOrders = userData.flightOrders || [];
+        state.flashSaleOrders = userData.flashSaleOrders || [];
       })
       .addCase(fetchUserOrders.rejected, (state, action) => {
         state.loading = false;

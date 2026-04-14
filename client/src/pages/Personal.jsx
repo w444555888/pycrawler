@@ -1,17 +1,9 @@
-/*
- * @Author: w444555888 w444555888@yahoo.com.tw
- * @Date: 2024-07-18 21:04:23
- * @LastEditors: w444555888 w444555888@yahoo.com.tw
- * @LastEditTime: 2024-08-06 18:49:53
- * @FilePath: \my-app\src\pages\Personal.jsx
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
-import React, { useState, useEffect } from 'react'
+
+import React, { useState, useEffect, useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './personal.scss'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleRight } from '@fortawesome/free-solid-svg-icons'
-import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux'
 import { logOut, setUserInfo } from '../redux/userStore'
 import { fetchUserOrders } from '../redux/orderStore'
@@ -20,27 +12,50 @@ import { request } from '../utils/apiService'
 import dayjs from '../utils/dayjs-config'
 import { toast } from 'react-toastify'
 import EmptyState from '../subcomponents/EmptyState'
+
+// reducer
+const formReducer = (state, action) => {
+  switch (action.type) {
+    case 'INIT_FORM':
+      return {
+        ...state,
+        real_name: action.payload.real_name || '',
+        phone_number: action.payload.phone_number || '',
+        address: action.payload.address || ''
+      }
+    case 'UPDATE_FIELD':
+      return {
+        ...state,
+        [action.field]: action.value
+      }
+    case 'RESET_FORM':
+      return action.payload
+    default:
+      return state
+  }
+}
+
 const Personal = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { userInfo } = useSelector(state => state.user);
-  const { orders, flightOrders, flashSaleOrders, loading: orderLoading } = useSelector(state => state.order);
+  const { orders = [], flightOrders = [], flashSaleOrders = [], loading: orderLoading } = useSelector(state => state.order);
   const username = userInfo?.username || '';
   const email = userInfo?.email || '';
-
-  // 本地狀態（非訂單相關）
   const [password, setPassword] = useState('')
-  const [realName, setRealName] = useState('')
-  const [phoneNumber, setPhoneNumber] = useState('')
-  const [address, setAddress] = useState('')
-  const [loading, setLoading] = useState('')
-
-  // 當 userInfo 更新時同步更新本地狀態
+  const [loading, setLoading] = useState(false)
+  const [formData, dispatchForm] = useReducer(formReducer, {
+    real_name: '',
+    phone_number: '',
+    address: ''
+  })
+  
   useEffect(() => {
     if (userInfo) {
-      setRealName(userInfo.realName || '')
-      setPhoneNumber(userInfo.phoneNumber || '')
-      setAddress(userInfo.address || '')
+      dispatchForm({
+        type: 'INIT_FORM',
+        payload: userInfo
+      })
     }
   }, [userInfo])
 
@@ -52,14 +67,17 @@ const Personal = () => {
   // 編輯帳戶
   const handleEdit = async (e) => {
     e.preventDefault()
-    
-    // 確保 userInfo 和 userInfo.id 存在才發送請求
     if (!userInfo || !userInfo.id) {
       toast.error('用戶信息未加載，請稍後再試');
       return;
     }
     
-    const result = await request('PUT', `/users/${userInfo.id}`, { password: password, realName: realName, phoneNumber: phoneNumber, address: address }, setLoading)
+    const result = await request('PUT', `/users/${userInfo.id}`, { 
+      password: password, 
+      real_name: formData.real_name, 
+      phone_number: formData.phone_number, 
+      address: formData.address 
+    }, setLoading)
     if (result.success) {
       const data = result.data;
       dispatch(setUserInfo(data));
@@ -80,12 +98,10 @@ const Personal = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      // 確保 userInfo 和 userInfo.id 存在才發送請求
       if (!userInfo || !userInfo.id) {
         return;
       }
       
-      // 使用Redux fetchUserOrders代替直接API請求
       dispatch(fetchUserOrders(userInfo.id));
     };
     fetchUserData();
@@ -131,8 +147,12 @@ const Personal = () => {
             <input
               type="text"
               id="realName"
-              value={realName}
-              onChange={(e) => setRealName(e.target.value)}
+              value={formData.real_name}
+              onChange={(e) => dispatchForm({
+                type: 'UPDATE_FIELD',
+                field: 'real_name',
+                value: e.target.value
+              })}
               required
             />
           </div>
@@ -140,8 +160,12 @@ const Personal = () => {
             <label htmlFor="phoneNumber">Phone Number:</label>
             <input
               id="phoneNumber"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              value={formData.phone_number}
+              onChange={(e) => dispatchForm({
+                type: 'UPDATE_FIELD',
+                field: 'phone_number',
+                value: e.target.value
+              })}
               required
             />
           </div>
@@ -149,8 +173,12 @@ const Personal = () => {
             <label htmlFor="address">Address:</label>
             <input
               id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={formData.address}
+              onChange={(e) => dispatchForm({
+                type: 'UPDATE_FIELD',
+                field: 'address',
+                value: e.target.value
+              })}
               required
             />
           </div>
@@ -162,7 +190,7 @@ const Personal = () => {
       <div className="personalContainer">
         <h2>My Hotel Bookings</h2>
         <div className="orderList">
-          {orders.length === 0 ? (
+          {(orders?.length || 0) === 0 ? (
             <EmptyState title="無訂房訂單" />
           ) : (
             orders.map((order) => (
@@ -178,9 +206,9 @@ const Personal = () => {
                   }</span>
                 </div>
                 <div className="orderDetails">
-                  <p>入住日期: {new Date(order.checkInDate).toLocaleDateString()}</p>
-                  <p>退房日期: {new Date(order.checkOutDate).toLocaleDateString()}</p>
-                  <p>總價: ${order.totalPrice}</p>
+                  <p>入住日期: {dayjs(order.check_in_date).format('YYYY-MM-DD')}</p>
+                  <p>退房日期: {dayjs(order.check_out_date).format('YYYY-MM-DD')}</p>
+                  <p>總價: ${order.total_price}</p>
                   <p>支付方式: {
                     order.payment.method === 'credit_card' ? '信用卡' :
                       order.payment.method === 'paypal' ? 'PayPal' :
@@ -206,7 +234,7 @@ const Personal = () => {
       <div className="personalContainer">
         <h2>My Flight Orders</h2>
         <div className="orderList">
-          {flightOrders.length === 0 ? (
+          {(flightOrders?.length || 0) === 0 ? (
             <EmptyState title="無航班訂單" />
           ) : (
             flightOrders.map((order) => {
@@ -291,7 +319,7 @@ const Personal = () => {
       <div className="personalContainer">
         <h2>My Flash Sale Bookings</h2>
         <div className="orderList">
-          {flashSaleOrders.length === 0 ? (
+          {(flashSaleOrders?.length || 0) === 0 ? (
             <EmptyState title="無搶購訂房活動訂單" />
           ) : (
             flashSaleOrders.map((order) => (
@@ -307,7 +335,7 @@ const Personal = () => {
                   <p>飯店: {order.hotelName}</p>
                   <p>房型: {order.roomTitle}</p>
                   <p>活動名稱: {order.saleTitle}</p>
-                  <p>日期: {new Date(order.date).toLocaleDateString()}</p>
+                  <p>日期: {dayjs(order.date).format('YYYY-MM-DD')}</p>
                   <p>原價: ${order.basePrice}</p>
                   <p>折扣: {order.discountRate * 100}%</p>
                   <p>折扣後價格: ${order.finalPrice}</p>

@@ -1,11 +1,4 @@
-/*
- * @Author: w444555888 w444555888@yahoo.com.tw
- * @Date: 2024-10-10 12:40:41
- * @LastEditors: w444555888 w444555888@yahoo.com.tw
- * @LastEditTime: 2024-10-10 13:28:28
- * @FilePath: \my-app\client\src\pages\ResetPassword.js
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
+
 import React, { useState } from 'react'
 import { request } from '../utils/apiService';
 import "./resetPassword.scss"
