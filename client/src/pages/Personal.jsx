@@ -21,7 +21,9 @@ const formReducer = (state, action) => {
         ...state,
         real_name: action.payload.real_name || '',
         phone_number: action.payload.phone_number || '',
-        address: action.payload.address || ''
+        address: action.payload.address || '',
+        username: action.payload.username || '',
+        email: action.payload.email || ''
       }
     case 'UPDATE_FIELD':
       return {
@@ -40,14 +42,15 @@ const Personal = () => {
   const navigate = useNavigate()
   const { userInfo } = useSelector(state => state.user);
   const { orders = [], flightOrders = [], flashSaleOrders = [], loading: orderLoading } = useSelector(state => state.order);
-  const username = userInfo?.username || '';
-  const email = userInfo?.email || '';
+  
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [formData, dispatchForm] = useReducer(formReducer, {
     real_name: '',
     phone_number: '',
-    address: ''
+    address: '',
+    username: '',
+    email: ''
   })
   
   useEffect(() => {
@@ -126,11 +129,11 @@ const Personal = () => {
         <form >
           <div className="formGroup">
             <label htmlFor="email">E-mail:</label>
-            <input type="email" id="email" value={email} required disabled />
+            <input type="email" id="email" value={formData.email} required disabled />
           </div>
           <div className="formGroup">
             <label htmlFor="username">Username:</label>
-            <input id="username" value={username} required disabled />
+            <input id="username" value={formData.username} required disabled />
           </div>
           <div className="formGroup">
             <label htmlFor="password">Change Password:</label>
