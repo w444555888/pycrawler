@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.models.room_inventory import RoomInventory
 from app.models.room import Room
 from app.models.hotel import Hotel
@@ -16,33 +17,26 @@ SERVICE_FEE_RATE = 0.10
 
 # 取得全部訂單
 async def list_orders(session: AsyncSession):
-    stmt = select(Order)
+    # 使用 selectinload 預加載關聯數據，避免 N+1 查詢問題
+    stmt = select(Order).options(
+        selectinload(Order.user),
+        selectinload(Order.hotel), 
+        selectinload(Order.room)
+    )
     order_result = await session.execute(stmt)
     orders = order_result.scalars().all()
     
     result = []
     for order in orders:
-        # 查找相關飯店和房间信息
-        hotel = None
-        room = None
-        
-        if order.hotel_id:
-            hotel_stmt = select(Hotel).where(Hotel.id == order.hotel_id)
-            hotel_result = await session.execute(hotel_stmt)
-            hotel = hotel_result.scalar_one_or_none()
-            
-        if order.room_id:
-            room_stmt = select(Room).where(Room.id == order.room_id)
-            room_result = await session.execute(room_stmt)
-            room = room_result.scalar_one_or_none()
-        
         order_data = {
             "id": order.id,
             "userId": order.user_id,
             "hotelId": order.hotel_id,
             "roomId": order.room_id,
-            "hotelName": hotel.name if hotel else "",
-            "roomTitle": room.title if room else "",
+            # 直接通過關係映射訪問關聯數據
+            "hotelName": order.hotel.name if order.hotel else "",
+            "roomTitle": order.room.title if order.room else "",
+            "userName": order.user.username if order.user else "",
             "checkInDate": order.check_in_date,
             "checkOutDate": order.check_out_date,
             "totalPrice": order.total_price,
@@ -58,34 +52,28 @@ async def list_orders(session: AsyncSession):
 
 # 根據 ID 取得單一訂單（含 hotel、room）
 async def get_order(order_id: int, session: AsyncSession):
-    stmt = select(Order).where(Order.id == order_id)
+    # 使用 selectinload 預加載關聯數據
+    stmt = select(Order).options(
+        selectinload(Order.user),
+        selectinload(Order.hotel),
+        selectinload(Order.room)
+    ).where(Order.id == order_id)
+    
     order_result = await session.execute(stmt)
     order = order_result.scalar_one_or_none()
     
     if not order:
         raise_error(404, "訂單找不到")
     
-    # 查找相關的酒店和房間信息
-    hotel = None
-    room = None
-    
-    if order.hotel_id:
-        hotel_stmt = select(Hotel).where(Hotel.id == order.hotel_id)
-        hotel_result = await session.execute(hotel_stmt)
-        hotel = hotel_result.scalar_one_or_none()
-        
-    if order.room_id:
-        room_stmt = select(Room).where(Room.id == order.room_id)
-        room_result = await session.execute(room_stmt)
-        room = room_result.scalar_one_or_none()
-    
     order_data = {
         "id": order.id,
         "userId": order.user_id,
         "hotelId": order.hotel_id,
         "roomId": order.room_id,
-        "hotelName": hotel.name if hotel else "",
-        "roomTitle": room.title if room else "",
+        # 直接通過關係映射訪問關聯數據
+        "hotelName": order.hotel.name if order.hotel else "",
+        "roomTitle": order.room.title if order.room else "",
+        "userName": order.user.username if order.user else "",
         "checkInDate": order.check_in_date,
         "checkOutDate": order.check_out_date,
         "totalPrice": order.total_price,
@@ -127,19 +115,25 @@ async def create_order(data: Dict, current_user: dict, session: AsyncSession):
     if end <= start:
         raise_error(400, "退房日必須晚於入住日")
 
-    # 驗證飯店與房型存在
-    hotel_stmt = select(Hotel).where(Hotel.id == hotel_id)
-    hotel_result = await session.execute(hotel_stmt)
-    hotel = hotel_result.scalar_one_or_none()
+    # 驗證飯店與房型存在（一次查詢即可）
+    hotel_room_stmt = select(Hotel, Room).join(Room, Hotel.id == Room.hotel_id).where(
+        Hotel.id == hotel_id, Room.id == room_id
+    )
+    hotel_room_result = await session.execute(hotel_room_stmt)
+    hotel_room_data = hotel_room_result.first()
     
-    room_stmt = select(Room).where(Room.id == room_id)
-    room_result = await session.execute(room_stmt)
-    room = room_result.scalar_one_or_none()
+    if not hotel_room_data:
+        # 分別查詢確認是哪個不存在
+        hotel_exists = await session.scalar(select(Hotel.id).where(Hotel.id == hotel_id))
+        room_exists = await session.scalar(select(Room.id).where(Room.id == room_id))
+        
+        if not hotel_exists:
+            raise_error(404, "找不到飯店")
+        if not room_exists:
+            raise_error(404, "找不到房型")
+        raise_error(400, "房型不屬於此飯店")
     
-    if not hotel:
-        raise_error(404, "找不到飯店")
-    if not room:
-        raise_error(404, "找不到房型")
+    hotel, room = hotel_room_data
 
     # 建立入住期間的日期清單 (退房日不算)
     current_day = start

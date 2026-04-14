@@ -287,7 +287,7 @@ async def list_hotels(
         # 建立基本查詢
         stmt = select(Hotel)
         
-        # 添加條件
+        # 申加條件
         if name:
             stmt = stmt.where(Hotel.name.ilike(f"%{name}%"))
         if hotel_id:
@@ -299,6 +299,8 @@ async def list_hotels(
         if max_price is not None:
             stmt = stmt.where(Hotel.cheapest_price <= max_price)
         
+        # 使用 selectinload 預加載 rooms 關系，避免 N+1 查詢問題
+        stmt = stmt.options(selectinload(Hotel.rooms))
         result = await session.execute(stmt)
         hotels = result.scalars().all()
         
@@ -313,10 +315,8 @@ async def list_hotels(
         # 轉換資料格式
         hotel_list = []
         for hotel in hotels:
-            # 查詢相關房間
-            room_stmt = select(Room).where(Room.hotel_id == hotel.id)
-            room_result = await session.execute(room_stmt)
-            rooms = room_result.scalars().all()
+            # 直接使用預加載的 rooms 關系，不需要額外查詢
+            rooms = hotel.rooms
             
             available_rooms = []
             for room in rooms:

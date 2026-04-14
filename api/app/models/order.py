@@ -56,10 +56,9 @@ class Order(Base):
     )
 
     # 关系映射
-    user: Mapped["User"] = relationship("User")
-    # 暂时移除 back_populates，避免循环导入问题
-    hotel: Mapped["Hotel"] = relationship("Hotel")
-    room: Mapped["Room"] = relationship("Room")
+    user: Mapped["User"] = relationship("User", back_populates="orders")
+    hotel: Mapped["Hotel"] = relationship("Hotel", back_populates="orders")
+    room: Mapped["Room"] = relationship("Room", back_populates="orders")
 
     def update_timestamp(self):
         """手动更新时间戳"""

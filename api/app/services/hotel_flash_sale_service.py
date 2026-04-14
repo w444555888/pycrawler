@@ -128,18 +128,17 @@ class HotelFlashSaleService:
         if not base_price or base_price <= 0:
             raise_error(400, "請輸入有效的活動底價")
 
-        # 验证酒店和房间存在
-        hotel_stmt = select(Hotel).where(Hotel.id == hotel_id)
-        room_stmt = select(Room).where(Room.id == room_id)
+        # 驗證酒店和房間存在（一次查詢即可）
+        hotel_room_stmt = select(Hotel, Room).join(Room, Hotel.id == Room.hotel_id).where(
+            Hotel.id == hotel_id, Room.id == room_id
+        )
+        hotel_room_result = await session.execute(hotel_room_stmt)
+        hotel_room_data = hotel_room_result.first()
         
-        hotel_result = await session.execute(hotel_stmt)
-        room_result = await session.execute(room_stmt)
-        
-        hotel = hotel_result.scalar_one_or_none()
-        room = room_result.scalar_one_or_none()
-        
-        if not hotel or not room:
+        if not hotel_room_data:
             raise_error(404, "飯店或房型不存在")
+        
+        hotel, room = hotel_room_data
 
         # 转换时间格式
         start_time = parse(data["startTime"]) if isinstance(data["startTime"], str) else data["startTime"]
