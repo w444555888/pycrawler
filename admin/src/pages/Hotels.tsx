@@ -54,6 +54,8 @@ const Hotels = () => {
       ]
     },
     { name: 'address', label: '地址', type: 'input', required: true },
+    { name: 'rating', label: '評分 (0-10分)', type: 'number', required: false, min: 0, max: 10, step: 0.1 },
+    { name: 'distance', label: '距離 (公里)', type: 'number', required: false, min: 0, step: 0.1 },
     { name: 'cheapestPrice', label: '最低價格', type: 'number', required: true },
     { name: 'photos', label: '照片 (逗號分隔)', type: 'input', required: true },
     { name: 'title', label: '標題', type: 'input', required: true },
@@ -271,10 +273,10 @@ const Hotels = () => {
       const h = res.data;
       setEditingHotel({
         ...h,
-        checkInTime: dayjs(h.check_in_time, 'HH:mm'),
-        checkOutTime: dayjs(h.check_out_time, 'HH:mm'),
+        checkInTime: dayjs(h.checkInTime, 'HH:mm'),
+        checkOutTime: dayjs(h.checkOutTime, 'HH:mm'),
         photos: h.photos.join(','),
-        nearbyAttractions: h.nearby_attractions.join(','),
+        nearbyAttractions: h.nearbyAttractions.join(','),
         facilities: Object.keys(h.facilities).filter(k => h.facilities[k])
       });
       setIsModalVisible(true);
@@ -299,6 +301,8 @@ const Hotels = () => {
   const handleSubmitHotel = async (values: any) => {
     const payload = {
       ...values,
+      distance: values.distance ? String(values.distance) : null,
+      rating: values.rating ? Number(values.rating) : null,
       checkInTime: values.checkInTime,
       checkOutTime: values.checkOutTime,
       photos: values.photos.split(',').map((s: string) => s.trim()),
@@ -323,6 +327,7 @@ const Hotels = () => {
     { title: '城市', dataIndex: 'city', key: 'city' },
     { title: '類型', dataIndex: 'type', key: 'type' },
     { title: '評分', dataIndex: 'rating', key: 'rating' },
+    { title: '距離 (km)', dataIndex: 'distance', key: 'distance' },
     { title: 'E-mail', dataIndex: 'email', key: 'email' },
     { title: '電話', dataIndex: 'phone', key: 'phone' },
     {

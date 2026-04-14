@@ -67,7 +67,7 @@ const Personal = () => {
     navigate('/')
   }
 
-  // 編輯帳戶
+  
   const handleEdit = async (e) => {
     e.preventDefault()
     if (!userInfo || !userInfo.id) {
@@ -89,8 +89,6 @@ const Personal = () => {
   }
 
 
-
-  // 登出
   const handleClicklogOut = async () => {
     await request('POST', '/auth/logout')
     dispatch(logOut())
@@ -99,6 +97,7 @@ const Personal = () => {
     navigate('/login')
   }
 
+  
   useEffect(() => {
     const fetchUserData = async () => {
       if (!userInfo || !userInfo.id) {

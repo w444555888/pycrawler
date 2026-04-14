@@ -30,6 +30,9 @@ export interface FormFieldConfig {
   readOnly?: boolean;
   timeFormat?: 'datetime' | 'timeOnly';
   onChange?: (value: any) => void;
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 interface DynamicFormModalProps {
@@ -138,7 +141,18 @@ const DynamicFormModal: React.FC<DynamicFormModalProps> = ({
             case "input":
               return <Form.Item key={key} {...commonProps}><Input placeholder={field.placeholder} readOnly={field.readOnly} /></Form.Item>;
             case "number":
-              return <Form.Item key={key} {...commonProps}><InputNumber className="full-width" placeholder={field.placeholder} readOnly={field.readOnly} /></Form.Item>;
+              return (
+                <Form.Item key={key} {...commonProps}>
+                  <InputNumber 
+                    className="full-width" 
+                    placeholder={field.placeholder} 
+                    readOnly={field.readOnly}
+                    min={field.min}
+                    max={field.max}
+                    step={field.step}
+                  />
+                </Form.Item>
+              );
             case "textarea":
               return <Form.Item key={key} {...commonProps}><Input.TextArea placeholder={field.placeholder} readOnly={field.readOnly} /></Form.Item>;
             case "checkbox":

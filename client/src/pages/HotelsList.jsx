@@ -12,9 +12,8 @@ import EmptyState from '../subcomponents/EmptyState'
 import Skeleton from 'react-loading-skeleton'
 import { toast } from 'react-toastify'
 const HotelsList = () => {
-    // 路由
+    
     const [searchParams, setSearchParams] = useSearchParams()
-
     const [name, setName] = useState('')
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')

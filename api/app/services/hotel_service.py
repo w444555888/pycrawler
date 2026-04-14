@@ -482,7 +482,7 @@ async def create_hotel_service(data: dict, session: AsyncSession):
         type=data.get("type", "hotel"),
         city=data.get("city", ""),
         address=data.get("address", ""),
-        distance=data.get("distance"),
+        distance=str(data["distance"]) if data.get("distance") is not None else None,
         photos=data.get("photos", []),
         title=data.get("title", ""),
         desc=data.get("desc", ""),
@@ -547,7 +547,11 @@ async def update_hotel(hotel_id: int, data: dict, session: AsyncSession):
     if "address" in data:
         hotel.address = data["address"]
     if "distance" in data:
-        hotel.distance = data["distance"]
+        # 将distance转换为字符串，因为数据库字段是VARCHAR类型
+        if data["distance"] is not None:
+            hotel.distance = str(data["distance"])
+        else:
+            hotel.distance = None
     if "photos" in data:
         hotel.photos = data["photos"]
     if "title" in data:
