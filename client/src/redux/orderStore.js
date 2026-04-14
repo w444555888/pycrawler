@@ -17,29 +17,27 @@ export const fetchUserOrders = createAsyncThunk(
 const orderStore = createSlice({
   name: 'order',
   initialState: {
-    // 酒店草稿訂單（待支付状態）
+    // 飯店草稿
     draftHotelOrder: null,
-    
-    // 酒店訂單数据（供 Personal.jsx 使用）
+
+    // 訂單給Personal.jsx使用
     hotelOrders: [],
     orders: [],
     flightOrders: [],
     flashSaleOrders: [],
-    
-    // 数据获取状態
+
     loading: false,
     error: null
   },
   
   reducers: {
-    // 设置草稿酒店订单（从Hotel页面跳转时使用）
     setDraftHotelOrder: (state, action) => {
       state.draftHotelOrder = {
         ...action.payload,
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30分钟过期
       };
-      // 保存到sessionStorage避免页面刷新丢失
+      // 保存到sessionStorage
       try {
         sessionStorage.setItem('draftHotelOrder', JSON.stringify(state.draftHotelOrder));
       } catch (e) {
@@ -48,13 +46,12 @@ const orderStore = createSlice({
     },
     
 
-    // 从sessionStorage恢复草稿订单
+    // sessionStorage恢復草稿訂單
     restoreDraftOrders: (state) => {
       try {
         const hotelDraft = sessionStorage.getItem('draftHotelOrder');
         if (hotelDraft) {
           const parsed = JSON.parse(hotelDraft);
-          // 检查是否过期（30分钟）
           if (new Date(parsed.expiresAt) > new Date()) {
             state.draftHotelOrder = parsed;
           } else {
@@ -65,7 +62,7 @@ const orderStore = createSlice({
         console.warn('无法恢复草稿订单:', e);
       }
     },
-    // 清除草稿订单
+    // 清除草稿訂單
     clearDraftHotelOrder: (state) => {
       state.draftHotelOrder = null;
       try {
