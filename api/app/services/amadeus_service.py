@@ -1,4 +1,5 @@
 import httpx
+import airportsdata
 from app.core.config import settings
 
 BASE_URL = "https://test.api.amadeus.com"
@@ -61,6 +62,8 @@ class AmadeusService:
         res.raise_for_status()
         data = res.json()
 
+        
+
         # 整理 JSON
         result = []
         for offer in data.get("data", []):
@@ -96,8 +99,7 @@ class AmadeusService:
 
     async def search_locations(self, keyword: str, page: int = 1, limit: int = 10) -> dict:
         """
-        搜尋機場和城市
-        使用 Amadeus 城市搜尋 API
+        搜尋機場和城市 - 使用本地 airportsdata 套件
         
         參數:
             keyword: 搜尋關鍵詞 (機場代碼、城市名稱等)
@@ -111,59 +113,88 @@ class AmadeusService:
                     "page": 1,
                     "limit": 10,
                     "links": {
-                        "self": "...",
-                        "next": "...",
-                        "last": "..."
+                        "next": True/False
                     }
                 },
                 "location_results": [
                     {
                         "iataCode": "LAX",
-                        "name": "Los Angeles",
+                        "name": "Los Angeles International Airport", 
                         "type": "AIRPORT",
                         "country": "US",
-                        "countryName": "United States"
+                        "city": "Los Angeles"
                     }
                 ]
             }
         """
         try:
-            token = await self.get_token()
-            offset = (page - 1) * limit
+            # 載入全球機場資料
+            airports_data = airportsdata.load('IATA')
             
-            async with httpx.AsyncClient() as client:
-                res = await client.get(
-                    f"{BASE_URL}/v1/reference-data/locations",
-                    headers={"Authorization": f"Bearer {token}"},
-                    params={
-                        "keyword": keyword,
-                        "subType": "AIRPORT,CITY",
-                        "page[limit]": limit,
-                        "page[offset]": offset
-                    }
-                )
-            res.raise_for_status()
-            data = res.json()
+            keyword_lower = keyword.lower()
+            keyword_upper = keyword.upper()
+            results = []
             
-            # 整理搜尋結果
-            locations = []
-            for item in data.get("data", []):
-                location = {
-                    "iataCode": item.get("iataCode"),
-                    "name": item.get("name"),
-                    "type": item.get("type"),  # AIRPORT, CITY
-                    "country": item.get("address", {}).get("countryCode"),
-                    "countryName": item.get("address", {}).get("countryName")
-                }
-                locations.append(location)
+            # 搜尋機場資料
+            for iata, airport_info in airports_data.items():
+                # 檢查 IATA 代碼匹配 (精確和模糊)
+                if keyword_upper in iata:
+                    results.append({
+                        "iataCode": iata,
+                        "name": airport_info.get('name', ''),
+                        "city": airport_info.get('city', ''), 
+                        "type": "AIRPORT",
+                        "country": airport_info.get('country', '')
+                    })
+                    continue
+                    
+                # 檢查機場名稱匹配
+                airport_name = airport_info.get('name', '').lower()
+                if keyword_lower in airport_name:
+                    results.append({
+                        "iataCode": iata,
+                        "name": airport_info.get('name', ''),
+                        "city": airport_info.get('city', ''),
+                        "type": "AIRPORT", 
+                        "country": airport_info.get('country', '')
+                    })
+                    continue
+                    
+                # 檢查城市名稱匹配
+                city_name = airport_info.get('city', '').lower()
+                if keyword_lower in city_name:
+                    results.append({
+                        "iataCode": iata,
+                        "name": airport_info.get('name', ''),
+                        "city": airport_info.get('city', ''),
+                        "type": "AIRPORT",
+                        "country": airport_info.get('country', '')
+                    })
             
-            # 提取分頁元數據
-            meta_data = data.get("meta", {})
-            total_count = meta_data.get("count", len(locations))
-            links = meta_data.get("links", {})
+            # 按相關性排序 (IATA 精確匹配優先)
+            def sort_key(item):
+                if item["iataCode"] == keyword_upper:
+                    return 0  # 精確 IATA 匹配優先
+                elif keyword_upper in item["iataCode"]:
+                    return 1  # IATA 部分匹配
+                elif keyword_lower in item["name"].lower():
+                    return 2  # 機場名稱匹配
+                else:
+                    return 3  # 城市名稱匹配
             
-            # 計算總頁數
+            results.sort(key=sort_key)
+            
+            # 限制結果數量
+            results = results[:100]  # 最多100個結果
+            
+            # 計算分頁
+            total_count = len(results)
             total_pages = (total_count + limit - 1) // limit
+            
+            # 獲取當前頁的數據
+            start_idx = (page - 1) * limit
+            end_idx = start_idx + limit
+            paginated_results = results[start_idx:end_idx]
             
             # 構建返回的 meta 信息
             result_meta = {
@@ -172,16 +203,15 @@ class AmadeusService:
                 "limit": limit,
                 "totalPages": total_pages,
                 "links": {
-                    "self": links.get("self", ""),
-                    "next": links.get("next") if page < total_pages else None,
-                    "last": links.get("last", "")
+                    "next": page < total_pages
                 }
             }
             
             return {
                 "meta": result_meta,
-                "location_results": locations
+                "location_results": paginated_results
             }
+            
         except Exception as e:
             return {
                 "meta": {
@@ -190,9 +220,7 @@ class AmadeusService:
                     "limit": limit,
                     "totalPages": 0,
                     "links": {
-                        "self": None,
-                        "next": None,
-                        "last": None
+                        "next": False
                     }
                 },
                 "location_results": [],

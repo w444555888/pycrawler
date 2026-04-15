@@ -33,18 +33,18 @@ const Flight = () => {
     const dispatch = useDispatch()
     const [searchParams, setSearchParams] = useSearchParams();
  
-    // Redux状态
+    // Redux
     const { 
         searchResults: flights,
         selectedFlight,
         searchParams: { departureCity, arrivalCity, departureIata, arrivalIata },
-        departureSuggestions: { items: departureSuggestions, showSuggestions: showDepartureSuggestions, loading: departureLoading },
-        arrivalSuggestions: { items: arrivalSuggestions, showSuggestions: showArrivalSuggestions, loading: arrivalLoading },
+        departureSuggestions: { items: departureSuggestions, showSuggestions: showDepartureSuggestions, loading: departureLoading, pagination: departurePagination, keyword: departureKeyword },
+        arrivalSuggestions: { items: arrivalSuggestions, showSuggestions: showArrivalSuggestions, loading: arrivalLoading, pagination: arrivalPagination, keyword: arrivalKeyword },
         searchLoading,
         pagination
     } = useSelector(state => state.flight)
     
-    // 本地状态（不是Redux管理的）
+    // 本地状态
     const [tripType, setTripType] = useState("roundtrip")
     const [openDate, setOpenDate] = useState(false)
     const [dates, setDates] = useState([
@@ -67,7 +67,8 @@ const Flight = () => {
         dispatch(resetFlightStore())
     }, [])
 
-    // 點擊外部關閉建議列表
+
+    // 點擊外部關閉列表
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (departureContainerRef.current && !departureContainerRef.current.contains(e.target)) {
@@ -81,6 +82,8 @@ const Flight = () => {
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
+
+
 
     // 非防抖版本的搜尋函數
     const performDepartureSearch = async (keyword) => {
@@ -97,13 +100,19 @@ const Flight = () => {
         dispatch(fetchAirportSuggestions({ type: 'arrival', keyword, page: 1, reset: true }))
     }
 
-    // 加載更多函數
+
+    // 搜尋航班防抖
+    const searchDeparture = useMemo(() => debounce(performDepartureSearch, 500), [])
+    const searchArrival = useMemo(() => debounce(performArrivalSearch, 500), [])
+
+
+
+    // 航班地點搜尋加載更多函數
     const loadMoreDeparture = async () => {
-        // 檢查是否有loading和pagination狀態，使用安全訪問
-        if (departureLoading || (pagination?.departure && pagination.departure.currentPage >= pagination.departure.totalPages)) return
+        if (departureLoading || !departurePagination?.hasNext) return
         
-        const keyword = pagination?.departure?.keyword || ''
-        const currentPage = pagination?.departure?.currentPage || 1
+        const keyword = departureCity  || ''
+        const currentPage = departurePagination?.current || 1
         
         if (keyword) {
             dispatch(fetchAirportSuggestions({ 
@@ -116,11 +125,10 @@ const Flight = () => {
     }
 
     const loadMoreArrival = async () => {
-        // 檢查是否有loading和pagination狀態，使用安全訪問
-        if (arrivalLoading || (pagination?.arrival && pagination.arrival.currentPage >= pagination.arrival.totalPages)) return
+        if (arrivalLoading || !arrivalPagination?.hasNext) return
         
-        const keyword = pagination?.arrival?.keyword || ''
-        const currentPage = pagination?.arrival?.currentPage || 1
+        const keyword = arrivalCity || ''
+        const currentPage = arrivalPagination?.current || 1
         
         if (keyword) {
             dispatch(fetchAirportSuggestions({ 
@@ -131,8 +139,9 @@ const Flight = () => {
             }))
         }
     }
+    
 
-    // 處理滾動
+    // 航班地點搜尋處理滾動
     const handleDepartureSuggestionsScroll = () => {
         if (!departureSuggestionsRef.current) return
         
@@ -151,10 +160,8 @@ const Flight = () => {
         }
     }
 
-    // 防抖
-    const searchDeparture = useMemo(() => debounce(performDepartureSearch, 500), [])
-    const searchArrival = useMemo(() => debounce(performArrivalSearch, 500), [])
 
+    
     // 選擇出發地
     const handleSelectDeparture = (location) => {
         dispatch(setDepartureCity(location.name))
@@ -208,15 +215,23 @@ const Flight = () => {
 
     // 加載更多航班
     const loadMoreFlights = async () => {
-        // 檢查是否有loading狀態和分頁資訊
-        if (searchLoading || (pagination?.flight && pagination.flight.currentPage >= pagination.flight.totalPages)) return
+        const totalPages = Math.ceil(pagination.total / pagination.pageSize);
+        if (searchLoading || pagination.current >= totalPages) return
         
-        const searchParams = pagination?.flight?.searchParams
-        const currentPage = pagination?.flight?.currentPage || 1
+        // 需要重新构建搜索参数（因为redux store中没有存储searchParams）
+        const searchParamsObj = {
+            origin: departureIata,
+            destination: arrivalIata,
+            date: dates[0].startDate ? format(dates[0].startDate, 'yyyy-MM-dd') : '',
+            returnDate: tripType === 'roundtrip' && dates[0].endDate ? format(dates[0].endDate, 'yyyy-MM-dd') : null,
+            tripType: tripType
+        }
         
-        if (searchParams) {
+        const currentPage = pagination?.current || 1
+        
+        if (searchParamsObj.origin && searchParamsObj.destination && searchParamsObj.date) {
             dispatch(fetchFlights({ 
-                params: searchParams, 
+                params: searchParamsObj, 
                 page: currentPage + 1, 
                 append: true 
             }))
