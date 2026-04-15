@@ -38,13 +38,13 @@ const Flight = () => {
         searchResults: flights,
         selectedFlight,
         searchParams: { departureCity, arrivalCity, departureIata, arrivalIata },
-        departureSuggestions: { items: departureSuggestions, showSuggestions: showDepartureSuggestions, loading: departureLoading, pagination: departurePagination, keyword: departureKeyword },
-        arrivalSuggestions: { items: arrivalSuggestions, showSuggestions: showArrivalSuggestions, loading: arrivalLoading, pagination: arrivalPagination, keyword: arrivalKeyword },
+        departureSuggestions: { items: departureSuggestions, showSuggestions: showDepartureSuggestions, loading: departureLoading, page: departurePage, hasNext: departureHasNext },
+        arrivalSuggestions: { items: arrivalSuggestions, showSuggestions: showArrivalSuggestions, loading: arrivalLoading, page: arrivalPage, hasNext: arrivalHasNext },
         searchLoading,
         pagination
     } = useSelector(state => state.flight)
     
-    // 本地状态
+    // 本地狀態
     const [tripType, setTripType] = useState("roundtrip")
     const [openDate, setOpenDate] = useState(false)
     const [dates, setDates] = useState([
@@ -90,14 +90,14 @@ const Flight = () => {
         if (keyword.trim().length < 2) {
             return
         }
-        dispatch(fetchAirportSuggestions({ type: 'departure', keyword, page: 1, reset: true }))
+        dispatch(fetchAirportSuggestions({ type: 'departure', keyword, page: 1, append: false }))
     }
 
     const performArrivalSearch = async (keyword) => {
         if (keyword.trim().length < 2) {
             return
         }
-        dispatch(fetchAirportSuggestions({ type: 'arrival', keyword, page: 1, reset: true }))
+        dispatch(fetchAirportSuggestions({ type: 'arrival', keyword, page: 1, append: false }))
     }
 
 
@@ -109,33 +109,33 @@ const Flight = () => {
 
     // 航班地點搜尋加載更多函數
     const loadMoreDeparture = async () => {
-        if (departureLoading || !departurePagination?.hasNext) return
+        if (departureLoading || !departureHasNext) return
         
         const keyword = departureCity  || ''
-        const currentPage = departurePagination?.current || 1
+        const currentPage = departurePage || 1
         
         if (keyword) {
             dispatch(fetchAirportSuggestions({ 
                 type: 'departure', 
                 keyword: keyword, 
                 page: currentPage + 1, 
-                reset: false 
+                append: true 
             }))
         }
     }
 
     const loadMoreArrival = async () => {
-        if (arrivalLoading || !arrivalPagination?.hasNext) return
+        if (arrivalLoading || !arrivalHasNext) return
         
         const keyword = arrivalCity || ''
-        const currentPage = arrivalPagination?.current || 1
+        const currentPage = arrivalPage || 1
         
         if (keyword) {
             dispatch(fetchAirportSuggestions({ 
                 type: 'arrival', 
                 keyword: keyword, 
                 page: currentPage + 1, 
-                reset: false 
+                append: true 
             }))
         }
     }
