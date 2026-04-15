@@ -25,7 +25,8 @@ dependencies = [
     "bcrypt (==4.0.1)",
     "httpx (>=0.25.0,<0.26.0)",
     "apscheduler (>=3.11.2,<4.0.0)",
-    "redis (>=7.3.0,<8.0.0)"
+    "redis (>=7.3.0,<8.0.0)",
+    "airportsdata (>=20260315,<20260316)"
 ]
 
 [build-system]
