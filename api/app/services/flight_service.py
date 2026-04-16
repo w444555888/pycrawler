@@ -87,26 +87,65 @@ async def search_locations(keyword: str, page: int = 1, limit: int = 10):
 
 def convert_aviationstack_to_flight_info(f: Dict) -> Dict:
     """
-    Aviationstack（你現在的中文結構）→ FlightInfo
+    Aviationstack raw → FlightInfo
     """
 
-    departure = f.get("出發", {})
-    arrival = f.get("抵達", {})
+    departure = f.get("departure", {})
+    arrival = f.get("arrival", {})
+    airline = f.get("airline", {})
+    flight = f.get("flight", {})
+    aircraft = f.get("aircraft") or {}
 
     return {
-        "flightId": None,
-        "flightNumber": f.get("航班號"),
-        "airline": f.get("航空公司"),
+        # =========================
+        # 基本
+        # =========================
+        "flightId": flight.get("iata"),
+        "flightDate": f.get("flight_date"),
+        "flightNumber": flight.get("iata"),
+        "flightNumberRaw": flight.get("number"),
+        "flightICAO": flight.get("icao"),
 
-        # IATA 代碼
-        "departureAirport": departure.get("IATA"),
-        "arrivalAirport": arrival.get("IATA"),
+        # =========================
+        # 航空公司
+        # =========================
+        "airline": airline.get("name"),
+        "airlineIATA": airline.get("iata"),
 
+        # =========================
+        # 機場
+        # =========================
+        "departureAirport": departure.get("iata"),
+        "arrivalAirport": arrival.get("iata"),
+
+        # =========================
         # 時間
-        "departureTime": departure.get("時間"),
-        "arrivalTime": arrival.get("時間"),
+        # =========================
+        "departureTime": departure.get("scheduled"),
+        "departureEstimated": departure.get("estimated"),
+        "departureActual": departure.get("actual"),
 
-        "aircraftCode": None,
+        "arrivalTime": arrival.get("scheduled"),
+        "arrivalEstimated": arrival.get("estimated"),
+        "arrivalActual": arrival.get("actual"),
+
+        # =========================
+        # 現場資訊
+        # =========================
+        "departureTerminal": departure.get("terminal"),
+        "departureGate": departure.get("gate"),
+        "arrivalTerminal": arrival.get("terminal"),
+
+        # =========================
+        # 飛機
+        # =========================
+        "aircraftCode": aircraft.get("icao24"),
+
+        # =========================
+        # codeshare（關鍵）
+        # =========================
+        "codeshare": flight.get("codeshared"),
+
         "itineraryDuration": None,
         "availableSeats": None
     }
@@ -122,18 +161,15 @@ async def search_flights(origin, destination, date, returnDate=None, page: int =
 
     data = await aviationstack.search_flights(origin, destination, date)
 
-    print("原始資料:", data)
-
     flights = []
 
-    for f in data.get("flights", []):
+    for f in data:   
         try:
             flight_info = convert_aviationstack_to_flight_info(f)
 
             flights.append({
                 "flightInfo": flight_info,
 
-                # Aviationstack 沒 price 
                 "price": {
                     "basePrice": None,
                     "tax": None,

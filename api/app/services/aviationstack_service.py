@@ -42,37 +42,9 @@ class AviationstackService:
         res.raise_for_status()
         data = res.json()
 
-        result = []
+        print("解析後資料:", data)
 
-        for f in data.get("data", []):
-            flight = {
-                "航班日期": f.get("flight_date"),
-                "航班狀態": f.get("flight_status"),
-                "航班號": f.get("flight", {}).get("iata"),
-                
-                "出發": {
-                    "機場": f.get("departure", {}).get("airport"),
-                    "IATA": f.get("departure", {}).get("iata"),
-                    "時間": f.get("departure", {}).get("scheduled")
-                },
-
-                "抵達": {
-                    "機場": f.get("arrival", {}).get("airport"),
-                    "IATA": f.get("arrival", {}).get("iata"),
-                    "時間": f.get("arrival", {}).get("scheduled")
-                },
-
-                "航空公司": f.get("airline", {}).get("name"),
-
-                "備註": "Aviationstack 不提供票價"
-            }
-
-            result.append(flight)
-
-        return {
-            "flights": result,
-            "count": len(result)
-        }
+        return data["data"] 
        
 
 

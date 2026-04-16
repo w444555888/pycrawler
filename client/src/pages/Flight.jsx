@@ -482,14 +482,24 @@ const Flight = () => {
                                         </div>
                                         <div className="routeInfo">
                                             <div className="departure">
-                                                <div className="city">{flightInfo.departureAirport}</div>
+                                                <div className="city">
+                                                    {flightInfo.departureAirport}
+                                                    {flightInfo.departureTerminal && (
+                                                        <span className="terminal">{`(T${flightInfo.departureTerminal})`}</span>
+                                                    )}
+                                                </div>
                                                 <div className="time">
                                                     {departureTime ? departureTime.format('HH:mm') : 'N/A'}
                                                 </div>
                                             </div>
                                             <div className="arrow">→</div>
                                             <div className="arrival">
-                                                <div className="city">{flightInfo.arrivalAirport}</div>
+                                                <div className="city">
+                                                    {flightInfo.arrivalAirport}
+                                                    {flightInfo.arrivalTerminal && (
+                                                        <span className="terminal">{`(T${flightInfo.arrivalTerminal})`}</span>
+                                                    )}
+                                                </div>
                                                 <div className="time">
                                                     {arrivalTime ? arrivalTime.format('HH:mm') : 'N/A'}
                                                 </div>
