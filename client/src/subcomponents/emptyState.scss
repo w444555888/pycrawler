@@ -25,6 +25,7 @@
       color: #8e8e8e;
       animation: fadeIn 0.5s ease;
       position: relative;
+      z-index: -999;
   
       svg {
         opacity: 0.8;
