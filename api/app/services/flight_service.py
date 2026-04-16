@@ -5,12 +5,12 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 
-from app.services.amadeus_service import AmadeusService
+from app.services.aviationstack_service import AviationstackService
 from app.models.real_flight_orders import RealFlightOrders
 from app.utils.response import success
 from app.utils.error_handler import raise_error
 
-amadeus = AmadeusService()
+aviationstack = AviationstackService()
 
 
 async def search_locations(keyword: str, page: int = 1, limit: int = 10):
@@ -58,7 +58,7 @@ async def search_locations(keyword: str, page: int = 1, limit: int = 10):
         if limit < 1 or limit > 50:
             raise_error(400, "每頁結果數必須在 1 到 50 之間")
         
-        result = await amadeus.search_locations(keyword.strip(), page, limit)
+        result = await aviationstack.search_locations(keyword.strip(), page, limit)
         
         if "error" in result:
             raise_error(400, f"搜尋失敗: {result['error']}")
@@ -85,161 +85,84 @@ async def search_locations(keyword: str, page: int = 1, limit: int = 10):
         raise_error(400, f"搜尋地點失敗: {str(e)}")
 
 
-def convert_amadeus_to_flight_info(amadeus_flight: Dict) -> Dict:
+def convert_aviationstack_to_flight_info(f: Dict) -> Dict:
     """
-    將 Amadeus API 返回的飛行數據轉換為 FlightInfo 格式
-    
-    改進後的格式包含中文鍵名:
-    {
-        "航班ID (flight id)": "...",
-        "行程 (itineraries)": [{
-            "行程總時間 (duration)": "PT10H30M",
-            "航段 (segments)": [{
-                "航空公司代碼 (carrierCode)": "AA",
-                "航班號碼 (number)": "123",
-                "飛機型號 (aircraft)": {"code": "B777"},
-                "航段時間 (duration)": "PT5H30M",
-                "出發地 (departure)": {"at": "2024-03-11T10:00:00", "iataCode": "LAX"},
-                "目的地 (arrival)": {"at": "2024-03-11T14:00:00", "iataCode": "JFK"}
-            }]
-        }],
-        "可訂座位數 (numberOfBookableSeats)": 5,
-        "價格資訊 (price)": {"total": "299.99"}
-    }
-    
-    返回 FlightInfo 格式:
-    {
-        "flightId": "...",
-        "flightNumber": "AA123",
-        "airline": "American Airlines",
-        "departureAirport": "LAX",
-        "arrivalAirport": "JFK",
-        "departureTime": datetime,
-        "arrivalTime": datetime,
-        "aircraftCode": "B777",
-        "itineraryDuration": "PT10H30M",
-        "availableSeats": 5
-    }
+    Aviationstack（你現在的中文結構）→ FlightInfo
     """
-    try:
-        segment = amadeus_flight["行程 (itineraries)"][0]["航段 (segments)"][0]
-        itinerary = amadeus_flight["行程 (itineraries)"][0]
-        
-        # 解析時間
-        departure_time = datetime.fromisoformat(segment["出發地 (departure)"]["at"].replace("Z", "+00:00"))
-        arrival_time = datetime.fromisoformat(segment["目的地 (arrival)"]["at"].replace("Z", "+00:00"))
-        
-        flight_number = segment["航空公司代碼 (carrierCode)"] + segment["航班號碼 (number)"]
-        
-        # 航空公司名稱對應表 (可根據實際情況擴展)
-        airline_names = {
-            "AA": "American Airlines",
-            "DL": "Delta Airlines",
-            "UA": "United Airlines",
-            "SW": "Southwest Airlines",
-            "BA": "British Airways",
-            "LH": "Lufthansa",
-            "AF": "Air France",
-            "KL": "KLM"
-        }
-        
-        airline = airline_names.get(segment["航空公司代碼 (carrierCode)"], segment["航空公司代碼 (carrierCode)"])
-        
-        # 提取飛機型號
-        aircraft_code = None
-        if "飛機型號 (aircraft)" in segment:
-            aircraft_code = segment["飛機型號 (aircraft)"].get("code")
-        
-        return {
-            "flightId": amadeus_flight.get("航班ID (flight id)"),
-            "flightNumber": flight_number,
-            "airline": airline,
-            "departureAirport": segment["出發地 (departure)"]["iataCode"],
-            "arrivalAirport": segment["目的地 (arrival)"]["iataCode"],
-            "departureTime": departure_time,
-            "arrivalTime": arrival_time,
-            "aircraftCode": aircraft_code,
-            "itineraryDuration": itinerary.get("行程總時間 (duration)"),
-            "availableSeats": amadeus_flight.get("可訂座位數 (numberOfBookableSeats)")
-        }
-    except (KeyError, ValueError) as e:
-        raise_error(400, f"無法解析飛行數據: {str(e)}")
+
+    departure = f.get("出發", {})
+    arrival = f.get("抵達", {})
+
+    return {
+        "flightId": None,
+        "flightNumber": f.get("航班號"),
+        "airline": f.get("航空公司"),
+
+        # IATA 代碼
+        "departureAirport": departure.get("IATA"),
+        "arrivalAirport": arrival.get("IATA"),
+
+        # 時間
+        "departureTime": departure.get("時間"),
+        "arrivalTime": arrival.get("時間"),
+
+        "aircraftCode": None,
+        "itineraryDuration": None,
+        "availableSeats": None
+    }
 
 
 async def search_flights(origin, destination, date, returnDate=None, page: int = 1, limit: int = 10):
-    """
-    搜尋航班 (支持分頁)
-    
-    參數:
-        origin: 出發地 IATA 代碼
-        destination: 目的地 IATA 代碼
-        date: 出發日期 (YYYY-MM-DD)
-        returnDate: 回程日期 (YYYY-MM-DD，可選，如果提供表示搜尋來回航班)
-        page: 頁碼 (預設 1)
-        limit: 每頁結果數 (預設 10)
-    """
-    # 驗證參數
+
     if page < 1:
         raise_error(400, "頁碼必須大於 0")
-    
+
     if limit < 1 or limit > 50:
         raise_error(400, "每頁結果數必須在 1 到 50 之間")
-    
-    # 調用 Amadeus 服務搜尋航班，傳遞 returnDate
-    data = await amadeus.search_flights(origin, destination, date, returnDate)
+
+    data = await aviationstack.search_flights(origin, destination, date)
+
+    print("原始資料:", data)
 
     flights = []
 
-    for f in data.get("航班搜尋結果 (flights)", []):
+    for f in data.get("flights", []):
         try:
-            # 轉換數據格式
-            flight_info = convert_amadeus_to_flight_info(f)
-            
-            # 提取價格資訊 (Amadeus返回總價，暫時假設沒有稅額)
-            price_info = f.get("價格資訊 (price)", {})
-            total_price = float(price_info.get("total", 0))
-            base_price = total_price * 0.9  # 假設稅費為10%
-            tax = total_price * 0.1
-            
+            flight_info = convert_aviationstack_to_flight_info(f)
+
             flights.append({
                 "flightInfo": flight_info,
+
+                # Aviationstack 沒 price 
                 "price": {
-                    "basePrice": round(base_price, 2),
-                    "tax": round(tax, 2),
-                    "totalPrice": total_price
+                    "basePrice": None,
+                    "tax": None,
+                    "totalPrice": None
                 },
+
                 "tripType": "roundtrip" if returnDate else "oneway"
             })
+
         except Exception as e:
-            # 忽略無法解析的飛行數據
-            print(f"警告: 無法解析飛行數據 - {str(e)}")
+            print("解析錯誤:", e)
             continue
 
-    # 計算分頁
     total_count = len(flights)
     total_pages = (total_count + limit - 1) // limit
-    
-    # 計算起始和結束索引
-    start_idx = (page - 1) * limit
-    end_idx = start_idx + limit
-    
-    # 獲取當前頁的數據
-    paginated_flights = flights[start_idx:end_idx]
-    
-    pagination_info = {
-        "page": page,
-        "limit": limit,
-        "total": total_count,
-        "totalPages": total_pages,
-        "hasNext": page < total_pages
-    }
-    
-    return success(
-        data={
-            "items": paginated_flights,
-            "pagination": pagination_info
+
+    start = (page - 1) * limit
+    end = start + limit
+
+    return success(data={
+        "items": flights[start:end],
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": total_count,
+            "totalPages": total_pages,
+            "hasNext": page < total_pages
         }
-    )
+    })
 
 
 # 建立飛行訂單

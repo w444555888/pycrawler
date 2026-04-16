@@ -2,100 +2,80 @@ import httpx
 import airportsdata
 from app.core.config import settings
 
-BASE_URL = "https://test.api.amadeus.com"
+BASE_URL = "http://api.aviationstack.com/v1"
 
-class AmadeusService:
+class AviationstackService:
 
-    async def get_token(self) -> str:
-        async with httpx.AsyncClient() as client:
-            res = await client.post(
-                f"{BASE_URL}/v1/security/oauth2/token",
-                data={
-                    "grant_type": "client_credentials",
-                    "client_id": settings.AMADEUS_KEY,
-                    "client_secret": settings.AMADEUS_SECRET
-                },
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded"
-                }
+    async def search_flights(self, origin: str, destination: str, date: str = None) -> dict:
+        """
+        使用 Aviationstack 查航班（注意：沒有票價）
+
+        參數:
+            origin: IATA (e.g. TPE)
+            destination: IATA (e.g. NRT)
+            date: YYYY-MM-DD (optional)
+
+        回傳: 航班資訊（非票價）
+        """
+
+        timeout = httpx.Timeout(30.0)
+
+        params = {
+            "access_key": settings.AVIATIONSTACK_KEY,
+            "dep_iata": origin,
+            "arr_iata": destination,
+        }
+
+        # Aviationstack 日期不是必須，但可以用 flight_date  免費版會 403
+        # if date:
+        #     params["flight_date"] = date
+
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            res = await client.get(
+                f"{BASE_URL}/flights",
+                params=params
             )
 
         print("STATUS:", res.status_code)
-        print("BODY:", res.text)    
+        print("BODY:", res.text[:300])    
 
-        res.raise_for_status()
-        return res.json()["access_token"]
-
-    async def search_flights(self, origin: str, destination: str, date: str, return_date: str = None) -> dict:
-        """
-        搜尋航班
-        
-        參數:
-            origin: 出發地 IATA 代碼
-            destination: 目的地 IATA 代碼
-            date: 出發日期 (YYYY-MM-DD)
-            return_date: 回程日期 (YYYY-MM-DD，可選)
-        
-        返回: 航班搜尋結果
-        """
-        token = await self.get_token()
-        timeout = httpx.Timeout(30.0)
-        
-        # 構建請求參數
-        params = {
-            "originLocationCode": origin,
-            "destinationLocationCode": destination,
-            "departureDate": date,
-            "adults": 1
-        }
-        
-        # 如果提供了回程日期，添加到參數中
-        if return_date:
-            params["returnDate"] = return_date
-        
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            res = await client.get(
-                f"{BASE_URL}/v2/shopping/flight-offers",
-                headers={"Authorization": f"Bearer {token}"},
-                params=params
-            )
         res.raise_for_status()
         data = res.json()
 
-        
-
-        # 整理 JSON
         result = []
-        for offer in data.get("data", []):
-            flight = {
-                "航班ID (flight id)": offer.get("id"),
-                "航班來源 (source)": offer.get("source"),
-                "是否需要即時出票 (instantTicketingRequired)": offer.get("instantTicketingRequired"),
-                "可訂座位數 (numberOfBookableSeats)": offer.get("numberOfBookableSeats"),
-                "行程 (itineraries)": [],
-                "價格資訊 (price)": offer.get("price")
-            }
 
-            for itin in offer.get("itineraries", []):
-                itinerary = {
-                    "行程總時間 (duration)": itin.get("duration"),
-                    "航段 (segments)": []
-                }
-                for seg in itin.get("segments", []):
-                    segment = {
-                        "出發地 (departure)": seg.get("departure"),
-                        "目的地 (arrival)": seg.get("arrival"),
-                        "航空公司代碼 (carrierCode)": seg.get("carrierCode"),
-                        "航班號碼 (number)": seg.get("number"),
-                        "飛機型號 (aircraft)": seg.get("aircraft"),
-                        "航段時間 (duration)": seg.get("duration")
-                    }
-                    itinerary["航段 (segments)"].append(segment)
-                flight["行程 (itineraries)"].append(itinerary)
+        for f in data.get("data", []):
+            flight = {
+                "航班日期": f.get("flight_date"),
+                "航班狀態": f.get("flight_status"),
+                "航班號": f.get("flight", {}).get("iata"),
+                
+                "出發": {
+                    "機場": f.get("departure", {}).get("airport"),
+                    "IATA": f.get("departure", {}).get("iata"),
+                    "時間": f.get("departure", {}).get("scheduled")
+                },
+
+                "抵達": {
+                    "機場": f.get("arrival", {}).get("airport"),
+                    "IATA": f.get("arrival", {}).get("iata"),
+                    "時間": f.get("arrival", {}).get("scheduled")
+                },
+
+                "航空公司": f.get("airline", {}).get("name"),
+
+                "備註": "Aviationstack 不提供票價"
+            }
 
             result.append(flight)
 
-        return {"航班搜尋結果 (flights)": result}
+        return {
+            "flights": result,
+            "count": len(result)
+        }
+       
+
+
 
     async def search_locations(self, keyword: str, page: int = 1, limit: int = 10) -> dict:
         """
