@@ -13,6 +13,7 @@ import dayjs from '../utils/dayjs-config';
 import formatDuration from '../utils/formatDuration';
 import { toast } from 'react-toastify'
 import EmptyState from '../subcomponents/EmptyState'
+import Skeleton from 'react-loading-skeleton'
 import { useDispatch, useSelector } from 'react-redux'
 import { 
   fetchFlights,
@@ -313,7 +314,11 @@ const Flight = () => {
                                     onScroll={handleDepartureSuggestionsScroll}
                                 >
                                     {departureLoading && departureSuggestions.length === 0 ? (
-                                        <div className="suggestionItem">搜尋中...</div>
+                                        <>
+                                            <div className="suggestionItem loading"><Skeleton height={20} /></div>
+                                            <div className="suggestionItem loading"><Skeleton height={20} /></div>
+                                            <div className="suggestionItem loading"><Skeleton height={20} /></div>
+                                        </>
                                     ) : (
                                         <>
                                             {departureSuggestions.map((location, index) => (
@@ -329,7 +334,7 @@ const Flight = () => {
                                                 </div>
                                             ))}
                                             {departureLoading && (
-                                                <div className="suggestionItem loading">加載中...</div>
+                                                <div className="suggestionItem loading"><Skeleton height={20} /></div>
                                             )}
                                         </>
                                     )}
@@ -359,7 +364,11 @@ const Flight = () => {
                                     onScroll={handleArrivalSuggestionsScroll}
                                 >
                                     {arrivalLoading && arrivalSuggestions.length === 0 ? (
-                                        <div className="suggestionItem">搜尋中...</div>
+                                        <>
+                                            <div className="suggestionItem loading"><Skeleton height={20} /></div>
+                                            <div className="suggestionItem loading"><Skeleton height={20} /></div>
+                                            <div className="suggestionItem loading"><Skeleton height={20} /></div>
+                                        </>
                                     ) : (
                                         <>
                                             {arrivalSuggestions.map((location, index) => (
@@ -375,7 +384,7 @@ const Flight = () => {
                                                 </div>
                                             ))}
                                             {arrivalLoading && (
-                                                <div className="suggestionItem loading">加載中...</div>
+                                                <div className="suggestionItem loading"><Skeleton height={20} /></div>
                                             )}
                                         </>
                                     )}
@@ -517,7 +526,7 @@ const Flight = () => {
                             {/* loading */}
                             {searchLoading && (
                                 <div className="flightItem loading">
-                                    <div className="loadingText">加載中...</div>
+                                    <Skeleton height={120} />
                                 </div>
                             )}
                         </>
