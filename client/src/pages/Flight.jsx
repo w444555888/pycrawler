@@ -218,7 +218,6 @@ const Flight = () => {
         const totalPages = Math.ceil(pagination.total / pagination.pageSize);
         if (searchLoading || pagination.current >= totalPages) return
         
-        // 需要重新构建搜索参数（因为redux store中没有存储searchParams）
         const searchParamsObj = {
             origin: departureIata,
             destination: arrivalIata,
@@ -250,7 +249,6 @@ const Flight = () => {
 
 
     const handleBookingFlightRouter = (flightData) => {
-        // 使用Redux保存选择的航班数据
         dispatch(setSelectedFlight({
             flightInfo: flightData.flightInfo,
             price: flightData.price,
@@ -516,7 +514,7 @@ const Flight = () => {
                                     </div>
                                 );
                             })}
-                            {/* 根據實際loading狀態顯示加載動畫 */}
+                            {/* loading */}
                             {searchLoading && (
                                 <div className="flightItem loading">
                                     <div className="loadingText">加載中...</div>

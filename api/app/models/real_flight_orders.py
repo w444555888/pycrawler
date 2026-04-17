@@ -14,7 +14,7 @@ class PassengerInfo(BaseModel):
     """乘客信息 - 驗證 JSON 結構"""
     name: str = Field(..., alias="name")
     gender: Literal[0, 1] = Field(..., alias="gender")  # 0: 女, 1: 男
-    birth_date: datetime = Field(..., alias="birthDate")
+    birth_date: str = Field(..., alias="birthDate")
     passport_number: str = Field(..., alias="passportNumber")
     email: str = Field(..., alias="email")
 
@@ -40,8 +40,8 @@ class FlightInfo(BaseModel):
     airline: Optional[str] = Field(None, alias="airline")
     departure_airport: str = Field(..., alias="departureAirport")
     arrival_airport: str = Field(..., alias="arrivalAirport")
-    departure_time: datetime = Field(..., alias="departureTime")
-    arrival_time: datetime = Field(..., alias="arrivalTime")
+    departure_time: str = Field(..., alias="departureTime")
+    arrival_time: str = Field(..., alias="arrivalTime")
     aircraft_code: Optional[str] = Field(None, alias="aircraftCode")
     itinerary_duration: Optional[str] = Field(None, alias="itineraryDuration")
     available_seats: Optional[int] = Field(None, alias="availableSeats")

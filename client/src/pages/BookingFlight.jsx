@@ -15,10 +15,8 @@ const BookingFlight = () => {
     const location = useLocation()
     const navigate = useNavigate()
     const dispatch = useDispatch()  
-    
-    // 从Redux获取选中的航班信息
+
     const { selectedFlight } = useSelector(state => state.flight)
-    
     const [loading, setLoading] = useState(false);
     const [bookingSuccess, setBookingSuccess] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);

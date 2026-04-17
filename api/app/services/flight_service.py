@@ -1,3 +1,5 @@
+import random
+import hashlib
 from fastapi import HTTPException
 from datetime import datetime, timezone
 from typing import Dict, Optional, List
@@ -85,70 +87,66 @@ async def search_locations(keyword: str, page: int = 1, limit: int = 10):
         raise_error(400, f"搜尋地點失敗: {str(e)}")
 
 
-def convert_aviationstack_to_flight_info(f: Dict) -> Dict:
-    """
-    Aviationstack raw → FlightInfo
-    """
 
+def generate_price(flight_info):
+    seed_str = f"{flight_info.get('flightId')}_{flight_info.get('flightDate')}_{flight_info.get('departureAirport')}_{flight_info.get('arrivalAirport')}"
+    num = sum(ord(c) for c in seed_str)
+    base = 1000 + (num % 9000)   # 1000 ~ 10000
+    tax = int(base * 0.1)
+
+    return {
+        "basePrice": base,
+        "tax": tax,
+        "totalPrice": base + tax
+    }
+
+
+def generate_seats(flight_info):
+    seed_str = f"{flight_info.get('flightId')}_{flight_info.get('flightDate')}"
+    num = sum(ord(c) for c in seed_str)
+    return 10 + (num % 91)   # 10 ~ 100
+
+
+
+def convert_aviationstack_to_flight_info(f: Dict) -> Dict:
     departure = f.get("departure", {})
     arrival = f.get("arrival", {})
     airline = f.get("airline", {})
     flight = f.get("flight", {})
     aircraft = f.get("aircraft") or {}
+    flight_id = (
+        flight.get("iata")
+        or flight.get("icao")
+        or f"{departure.get('iata')}_{arrival.get('iata')}_{f.get('flight_date')}"
+    )   # 優先使用 IATA，次選 ICAO，最後用組合鍵
 
-    return {
-        # =========================
-        # 基本
-        # =========================
-        "flightId": flight.get("iata"),
+    flight_info = {
+        "flightId": flight_id,
         "flightDate": f.get("flight_date"),
         "flightNumber": flight.get("iata"),
         "flightNumberRaw": flight.get("number"),
         "flightICAO": flight.get("icao"),
-
-        # =========================
-        # 航空公司
-        # =========================
         "airline": airline.get("name"),
         "airlineIATA": airline.get("iata"),
-
-        # =========================
-        # 機場
-        # =========================
         "departureAirport": departure.get("iata"),
         "arrivalAirport": arrival.get("iata"),
-
-        # =========================
-        # 時間
-        # =========================
         "departureTime": departure.get("scheduled"),
         "departureEstimated": departure.get("estimated"),
         "departureActual": departure.get("actual"),
-
         "arrivalTime": arrival.get("scheduled"),
         "arrivalEstimated": arrival.get("estimated"),
         "arrivalActual": arrival.get("actual"),
-
-        # =========================
-        # 現場資訊
-        # =========================
         "departureTerminal": departure.get("terminal"),
         "departureGate": departure.get("gate"),
         "arrivalTerminal": arrival.get("terminal"),
-
-        # =========================
-        # 飛機
-        # =========================
         "aircraftCode": aircraft.get("icao24"),
-
-        # =========================
-        # codeshare（關鍵）
-        # =========================
         "codeshare": flight.get("codeshared"),
-
         "itineraryDuration": None,
-        "availableSeats": None
     }
+
+    flight_info["availableSeats"] = generate_seats(flight_info)
+
+    return flight_info
 
 
 async def search_flights(origin, destination, date, returnDate=None, page: int = 1, limit: int = 10):
@@ -169,13 +167,7 @@ async def search_flights(origin, destination, date, returnDate=None, page: int =
 
             flights.append({
                 "flightInfo": flight_info,
-
-                "price": {
-                    "basePrice": None,
-                    "tax": None,
-                    "totalPrice": None
-                },
-
+                "price": generate_price(flight_info),
                 "tripType": "roundtrip" if returnDate else "oneway"
             })
 
@@ -237,8 +229,8 @@ async def create_flight_order(payload: Dict, user_id: int, session: AsyncSession
             category=category,
             price=price,
             status="PENDING",
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            created_at=datetime.now(),
+            updated_at=datetime.now()
         )
 
         session.add(flight_order)
@@ -352,7 +344,7 @@ async def cancel_order(order_id: int, user_id: int, is_admin: bool, session: Asy
 
         # 更新訂單狀態與時間戳
         order.status = "CANCELLED"
-        order.updated_at = datetime.now(timezone.utc)
+        order.updated_at = datetime.now()
         await session.commit()
 
         result = {
