@@ -129,7 +129,7 @@ async def forgot_password(data: dict, session: AsyncSession):
     
     token = secrets.token_hex(16)
     user.reset_password_token = token
-    user.reset_password_expires = datetime.now(timezone.utc) + timedelta(hours=1)
+    user.reset_password_expires = datetime.now() + timedelta(hours=1)
     await session.commit()
 
     await send_reset_email(user.email, token)
@@ -139,7 +139,7 @@ async def forgot_password(data: dict, session: AsyncSession):
 async def reset_password(token: str, new_password: str, session: AsyncSession):
     stmt = select(User).where(
         User.reset_password_token == token,
-        User.reset_password_expires > datetime.now(timezone.utc)
+        User.reset_password_expires > datetime.now()
     )
     result = await session.execute(stmt)
     user = result.scalar_one_or_none()
