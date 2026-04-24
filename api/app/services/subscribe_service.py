@@ -4,7 +4,7 @@ from sqlalchemy import select, delete
 from app.models.subscribe import Subscribe
 from app.utils.response import success
 from app.utils.error_handler import raise_error
-from datetime import datetime, timezone
+from datetime import datetime
 
 
 class SubscribeService:
@@ -26,9 +26,7 @@ class SubscribeService:
 
         # 创建订阅
         new_sub = Subscribe(
-            email=email.lower(),
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            email=email.lower()
         )
         session.add(new_sub)
         await session.commit()

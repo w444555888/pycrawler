@@ -39,7 +39,12 @@ export const request = async (method, endpoint, data = {}, setLoading = () => { 
         }
         const response = await api(config);
         const json = response.data;
-        return { success: true, data: json.data ?? json }
+        
+        if (json.success) {
+            return { success: true, data: json.data ?? json, message: json.message ?? "" };
+        } else {
+            return { success: false, message: json.message, data: json.data };
+        }
     } catch (error) {
         const errorMessage =
             error.response?.data?.message ||

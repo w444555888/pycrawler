@@ -21,8 +21,8 @@ const Footer = () => {
 
         const res = await request("POST", "/subscribe", { email });
         if (res.success) {
-            const msg = res.data?.message;
-            if (msg.includes("訂閱成功")) {
+            const msg = res.message;
+            if (msg && msg.includes("訂閱成功")) {
                 setSubscribed(true);
             }
             
