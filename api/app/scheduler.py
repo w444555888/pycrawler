@@ -35,7 +35,7 @@ class TaskScheduler:
     
     def setup_jobs(self):
         """設置定時任務"""
-        # 每天早上9點發送電子報
+        # 每天 09:00 發送電子報
         self.scheduler.add_job(
             daily_newsletter_job,
             CronTrigger(hour=9, minute=0, second=0),  # 每天 09:00:00

@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 from app.utils.email_service import send_email
 from app.core.config import settings
+from app.db import AsyncSessionLocal
 import logging
 
 # 設置日誌
@@ -16,70 +17,72 @@ class NewsletterService:
     async def send_daily_newsletter():
         """發送每日電子報"""
         try:
-            # 獲取所有訂閱者郵箱
-            from app.services.subscribe_service import SubscribeService
-            subscriber_emails = await SubscribeService.get_all_subscriber_emails()
-            
-            if not subscriber_emails:
-                logger.info("無訂閱者，不寄送電子報")
-                return
-            
-            logger.info(f"開始發送電子報給 {len(subscriber_emails)} 位訂閱者")
-            
-            # 電子報內容
-            subject = "今日最新優惠 - MIKE Booking"
-            html_content = f"""
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #2563eb;">今日最新優惠</h2>
-                <p>感謝您訂閱 MIKE.BOOKING 電子報！</p>
-                <p>我們為您精選了今日最優惠的旅遊資訊：</p>
+            # 創建數據庫會話
+            async with AsyncSessionLocal() as session:
+                # 獲取所有訂閱者郵箱
+                from app.services.subscribe_service import SubscribeService
+                subscriber_emails = await SubscribeService.get_all_subscriber_emails(session)
                 
-                <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="color: #1f2937;">🏨 酒店限時搶購</h3>
-                    <p>精選酒店限時優惠，數量有限，欲購從速！</p>
-                </div>
+                if not subscriber_emails:
+                    logger.info("無訂閱者，不寄送電子報")
+                    return
                 
-                <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="color: #1f2937;">✈️ 機票優惠</h3>
-                    <p>熱門航線機票優惠，讓您輕鬆規劃下一趟旅程！</p>
-                </div>
+                logger.info(f"開始發送電子報給 {len(subscriber_emails)} 位訂閱者")
                 
-                <p style="margin-top: 30px;">
-                    立即前往 <a href="{settings.CLIENT_URL}" style="color: #2563eb;">MIKE.BOOKING</a> 
-                    查看更多優惠！
-                </p>
-                
-                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-                
-                <p style="font-size: 12px; color: #6b7280;">
-                    若您不想再收到此郵件，請聯繫客服告知。<br>
-                    此郵件由 MIKE.BOOKING 系統自動發送，請勿直接回覆。
-                </p>
-            </div>
-            """
-            
-            # 發送郵件給每位訂閱者
-            successful_count = 0
-            failed_count = 0
-            
-            for email in subscriber_emails:
-                try:
-                    await send_email(
-                        to=email,
-                        subject=subject,
-                        html_content=html_content
-                    )
-                    successful_count += 1
-                    logger.info(f"電子報發送成功: {email}")
+                # 電子報內容
+                subject = "今日最新優惠 - MIKE Booking"
+                html_content = f"""
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2563eb;">今日最新優惠</h2>
+                    <p>感謝您訂閱 MIKE.BOOKING 電子報！</p>
+                    <p>我們為您精選了今日最優惠的旅遊資訊：</p>
                     
-                    # 避免發送過快
-                    await asyncio.sleep(0.5)
+                    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #1f2937;">🏨 酒店限時搶購</h3>
+                        <p>精選酒店限時優惠，數量有限，欲購從速！</p>
+                    </div>
                     
-                except Exception as e:
-                    failed_count += 1
-                    logger.error(f"電子報發送失敗給 {email}: {e}")
-            
-            logger.info(f"電子報發送完成 - 成功: {successful_count}, 失敗: {failed_count}")
+                    <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: #1f2937;">✈️ 機票優惠</h3>
+                        <p>熱門航線機票優惠，讓您輕鬆規劃下一趟旅程！</p>
+                    </div>
+                    
+                    <p style="margin-top: 30px;">
+                        立即前往 <a href="{settings.CLIENT_URL}" style="color: #2563eb;">MIKE.BOOKING</a> 
+                        查看更多優惠！
+                    </p>
+                    
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                    
+                    <p style="font-size: 12px; color: #6b7280;">
+                        若您不想再收到此郵件，請聯繫客服告知。<br>
+                        此郵件由 MIKE.BOOKING 系統自動發送，請勿直接回覆。
+                    </p>
+                </div>
+                """
+                
+                # 發送郵件給每位訂閱者
+                successful_count = 0
+                failed_count = 0
+                
+                for email in subscriber_emails:
+                    try:
+                        await send_email(
+                            to=email,
+                            subject=subject,
+                            html_content=html_content
+                        )
+                        successful_count += 1
+                        logger.info(f"電子報發送成功: {email}")
+                        
+                        # 避免發送過快
+                        await asyncio.sleep(0.5)
+                        
+                    except Exception as e:
+                        failed_count += 1
+                        logger.error(f"電子報發送失敗給 {email}: {e}")
+                
+                logger.info(f"電子報發送完成 - 成功: {successful_count}, 失敗: {failed_count}")
             
         except Exception as e:
             logger.error(f"發送每日電子報時發生錯誤: {e}")
