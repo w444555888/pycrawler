@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from app.utils.email_service import send_email
+from app.core.config import settings
 import logging
 
 # 設置日誌
@@ -27,7 +28,7 @@ class NewsletterService:
             
             # 電子報內容
             subject = "今日最新優惠 - MIKE Booking"
-            html_content = """
+            html_content = f"""
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #2563eb;">今日最新優惠</h2>
                 <p>感謝您訂閱 MIKE.BOOKING 電子報！</p>
@@ -44,7 +45,7 @@ class NewsletterService:
                 </div>
                 
                 <p style="margin-top: 30px;">
-                    立即前往 <a href="https://pycrawler-client.onrender.com" style="color: #2563eb;">MIKE.BOOKING</a> 
+                    立即前往 <a href="{settings.CLIENT_URL}" style="color: #2563eb;">MIKE.BOOKING</a> 
                     查看更多優惠！
                 </p>
                 
@@ -88,7 +89,7 @@ class NewsletterService:
         """發送歡迎郵件給新訂閱者"""
         try:
             subject = "歡迎加入 MIKE.BOOKING 電子報！"
-            html_content = """
+            html_content = f"""
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #2563eb;">歡迎加入我們的電子報！</h2>
                 <p>親愛的旅遊愛好者，</p>
@@ -105,7 +106,7 @@ class NewsletterService:
                 </div>
                 
                 <p>
-                    立即前往 <a href="http://localhost:3000" style="color: #2563eb; text-decoration: none; font-weight: bold;">MIKE.BOOKING</a> 
+                    立即前往 <a href="{settings.CLIENT_URL}" style="color: #2563eb; text-decoration: none; font-weight: bold;">MIKE.BOOKING</a> 
                     開始您的旅程！
                 </p>
                 
