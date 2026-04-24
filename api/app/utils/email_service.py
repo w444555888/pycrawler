@@ -8,11 +8,12 @@ import os
 # env
 EMAIL_ADDRESS = settings.EMAIL
 EMAIL_PASSWORD = settings.EMAIL_PASSWORD
+CLIENT_URL = settings.CLIENT_URL
 
 
 async def send_reset_email(to_email: str, token: str):
     subject = "重置密碼請求"
-    reset_link = f"http://localhost:3000/reset-password/{token}"
+    reset_link = f"{CLIENT_URL}/reset-password/{token}"
     body = f"""請點擊以下鏈接重置你的密碼：
     {reset_link}
     如果你沒有請求此操作，請忽略此郵件。

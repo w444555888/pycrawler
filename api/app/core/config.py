@@ -39,6 +39,9 @@ class Settings:
     
     # 从环境变量中取得 AVIATIONSTACK 的设定值，若未设定则使用预设值
     AVIATIONSTACK_KEY = os.getenv("AVIATIONSTACK_KEY", "b732bfbbfee6c50404ed1b0b0bac15a2")
+
+    # 前端部屬域名
+    CLIENT_URL = os.getenv("CLIENT_URL", "https://pycrawler-client.onrender.com")
     
     @property
     def database_url(self) -> str:
