@@ -54,6 +54,7 @@ async def init_db():
         from app.models.room_inventory import RoomInventory
         from app.models.subscribe import Subscribe
         from app.models.hotel_flash_sale import HotelFlashSale, HotelFlashSaleInventory, HotelFlashSaleOrder
+        from app.models.travel_package import TravelPackage, TravelPackageBooking, TravelPackageReview
         
         # 创建所有表
         await conn.run_sync(Base.metadata.create_all)

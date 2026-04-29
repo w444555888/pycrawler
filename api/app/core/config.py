@@ -39,10 +39,17 @@ class Settings:
     
     # 从环境变量中取得 AVIATIONSTACK 的设定值，若未设定则使用预设值
     AVIATIONSTACK_KEY = os.getenv("AVIATIONSTACK_KEY", "b732bfbbfee6c50404ed1b0b0bac15a2")
+    
+    # Foursquare API Configuration
+    FOURSQUARE_API_KEY = os.getenv("FOURSQUARE_API_KEY", "IMDFNRKJWFPFOW1FLAD5NMX5WK1LMFLSAE2XYP0GZTCK05XK")
+    FOURSQUARE_CLIENT_ID = os.getenv("FOURSQUARE_CLIENT_ID", "1G0OIZVFOWV4FDKUOEOB4TOQBYZUAOJ4JZBI2FNGNTGTK4AH")
+    FOURSQUARE_CLIENT_SECRET = os.getenv("FOURSQUARE_CLIENT_SECRET", "LPMXINT0NOOGIKLSCPSYW3J00TXA1NWYGNE5BRMSX3L04WHD")
 
     # 前端部屬域名
     CLIENT_URL = os.getenv("CLIENT_URL", "https://pycrawler-client.onrender.com")
     
+    # 經緯度
+    OPENCAGE_API_KEY = os.getenv("OPENCAGE_API_KEY", "f0c040b99ba34dc5bea782add240d870")
     @property
     def database_url(self) -> str:
         """动态构建数据库 URL"""

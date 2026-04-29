@@ -8,7 +8,7 @@ import logging
 import os
 
 from app.core.config import settings
-from app.routes import hotels, rooms, users, auth, order, flight, captcha, hotel_flash_sale, subscribe
+from app.routes import hotels, rooms, users, auth, order, flight, captcha, hotel_flash_sale, subscribe, travel_packages
 from app.db import init_db
 from app.utils.error_handler import http_error_handler, validation_exception_handler
 from app.utils.file_utils import get_upload_dir
@@ -62,6 +62,7 @@ app.include_router(flight.router, prefix="/api/v1/flight")
 app.include_router(captcha.router, prefix="/api/v1/captcha")
 app.include_router(hotel_flash_sale.router, prefix="/api/v1/hotelFlashSale")
 app.include_router(subscribe.router, prefix="/api/v1/subscribe")
+app.include_router(travel_packages.router, prefix="/api/v1/travel")
 
 # 統一錯誤格式處理器
 app.add_exception_handler(HTTPException, http_error_handler)
