@@ -1,3 +1,33 @@
+// 位置图标
+.location-icon {
+  margin-right: 4px;
+}
+
+// 距离文字
+.distance-text {
+  margin-left: 8px;
+  color: #999;
+  font-size: 0.9em;
+}
+
+// 评分星星
+.star-icon {
+  color: #ffc107;
+}
+// 场馆图片占位图标样式
+.placeholder-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #f5f7fa;
+}
+
+.placeholder-icon {
+  font-size: 48px;
+  color: #bbb;
+}
 // TravelPackageList styles
 .travel-package-list {
   min-height: 100vh;

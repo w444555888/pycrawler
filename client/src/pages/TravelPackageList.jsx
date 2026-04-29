@@ -51,12 +51,6 @@ const TravelPackageList = () => {
   };
 
 
-
-  useEffect(() => {
-    fetchPackages();
-  }, []);
-
-
   const handleCityChange = (value) => {
     setFilters({ city: value });
   };
@@ -142,7 +136,6 @@ const TravelPackageList = () => {
 
           {/* 主内容区 */}
           <div className="main-content">
-            {/* 结果统计 */}
             <div className="results-header">
               <span>共找到 {packages.length} 个场馆</span>
             </div>
@@ -168,27 +161,19 @@ const TravelPackageList = () => {
                     {pkg.photos && pkg.photos.length > 0 ? (
                       <img src={pkg.photos[0]} alt={pkg.name} />
                     ) : (
-                      pkg.categories && pkg.categories[0] ? (
-                        <img
-                          src={pkg.categories[0].icon.prefix + 'bg_120' + pkg.categories[0].icon.suffix}
-                          alt={pkg.categories[0].short_name || pkg.categories[0].name}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#f5f7fa' }}
-                        />
-                      ) : (
-                        <div className="placeholder-image">
-                          <span>📸</span>
-                        </div>
-                      )
+                      <div className="placeholder-image">
+                        <FontAwesomeIcon icon={faTag} className="placeholder-icon" />
+                      </div>
                     )}
                   </div>
 
                   {/* 场馆信息 */}
                   <div className="package-info">
                     <div className="package-location">
-                      <FontAwesomeIcon icon={faMapMarkerAlt} style={{marginRight: 4}} />
+                      <FontAwesomeIcon icon={faMapMarkerAlt} className="location-icon" />
                       {pkg.location?.formatted_address || pkg.address || '-'}
                       {pkg.distance !== undefined && (
-                        <span style={{ marginLeft: 8, color: '#999', fontSize: '0.9em' }}>
+                        <span className="distance-text">
                           {formatDistance(pkg.distance)}
                         </span>
                       )}
@@ -225,7 +210,7 @@ const TravelPackageList = () => {
                       <div className="package-rating">
                         {pkg.rating ? (
                           <>
-                            <span className="stars"><FontAwesomeIcon icon={faStar} style={{color: '#ffc107'}} /></span>
+                            <span className="stars"><FontAwesomeIcon icon={faStar} className="star-icon" /></span>
                             <span>{pkg.rating.toFixed(1)}</span>
                           </>
                         ) : (
