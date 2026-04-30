@@ -23,6 +23,7 @@ const Navbar = () => {
         const routes = {
             '航班': '/flight',
             '住宿': '/',
+            '行程活動 / 當地體驗': '/travel-packages',
         };
 
         if (routes[item]) {
