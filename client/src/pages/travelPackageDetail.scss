@@ -1,3 +1,71 @@
+.tpd__loading {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: #fafbfc;
+
+  .tpd-skel-wrap {
+    width: 100%;
+    max-width: 1200px;
+    margin: 40px auto 0;
+    padding: 32px 24px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px 0 rgba(0,0,0,0.04);
+
+    .tpd-skel-hero {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 32px;
+    }
+
+    .tpd-skel-row {
+      display: flex;
+      gap: 32px;
+
+      .tpd-skel-main {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+
+        .tpd-skel-title {
+          margin-bottom: 8px;
+          border-radius: 6px;
+        }
+
+        .tpd-skel-meta {
+          margin-bottom: 12px;
+          border-radius: 4px;
+        }
+
+        .tpd-skel-block {
+          border-radius: 10px;
+        }
+      }
+
+      .tpd-skel-side {
+        width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .tpd-skel-side1,
+        .tpd-skel-side2 {
+          border-radius: 8px;
+        }
+
+        .tpd-skel-side3 {
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+}
+
+
 .tpd {
   background: #0b0f17;
   color: #eaeaea;

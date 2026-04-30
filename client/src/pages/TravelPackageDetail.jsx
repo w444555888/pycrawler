@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import EmptyState from '../subcomponents/EmptyState';
+import Skeleton from 'react-loading-skeleton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMapMarkerAlt, faStar, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { useParams } from 'react-router-dom';
@@ -24,8 +26,34 @@ const TravelPackageDetail = () => {
     fetchData();
   }, [packageId]);
 
-  if (loading) return <div className="tpd-loading">Loading...</div>;
-  if (!data) return <div className="tpd-loading">No Data</div>;
+  if (loading) {
+    return (
+      <div className="tpd__loading">
+        <div className="tpd-skel-wrap">
+          <Skeleton height={320} className="tpd-skel-hero" />
+          <div className="tpd-skel-row">
+            <div className="tpd-skel-main">
+              <Skeleton height={40} width={220} className="tpd-skel-title" />
+              <Skeleton count={3} height={24} className="tpd-skel-meta" />
+              <Skeleton height={180} className="tpd-skel-block" />
+            </div>
+            <div className="tpd-skel-side">
+              <Skeleton height={60} className="tpd-skel-side1" />
+              <Skeleton height={48} className="tpd-skel-side2" />
+              <Skeleton count={3} height={20} className="tpd-skel-side3" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (!data) {
+    return (
+      <div className="tpd__loading">
+        <EmptyState title="沒有資料" description="目前查無此旅遊產品" icon="inventory" />
+      </div>
+    );
+  }
 
   return (
     <div className="tpd">
