@@ -424,6 +424,18 @@
       }
     }
 
+        // 手机端骨架屏居中
+        @media (max-width: 768px) {
+          .skeleton-list {
+            justify-items: center;
+            grid-template-columns: 1fr;
+          }
+          .skeleton-card {
+            width: 100%;
+            max-width: 400px;
+          }
+        }
+
     .empty-state {
       .empty-icon {
         font-size: 4rem;

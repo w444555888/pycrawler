@@ -13,7 +13,7 @@ const TravelPackageList = () => {
   
   // State 管理
   const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({ city: '' });
   const [pagination, setPagination] = useState({
@@ -43,6 +43,9 @@ const TravelPackageList = () => {
         offset: isLoadMore ? prev.offset + prev.limit : prev.limit,
         hasMore: newPackages.length === prev.limit
       }));
+
+      console.log('pagination:', pagination);
+      
       setError(null);
     } else {
       setError(res.message || '获取套餐失败');
@@ -65,13 +68,7 @@ const TravelPackageList = () => {
 
 
   const handlePackageClick = (pkg) => {
-    if (pkg.placemaker_url) {
-      window.open(pkg.placemaker_url, '_blank');
-    } else if (pkg.link) {
-      navigate(pkg.link);
-    } else if (pkg.fsq_place_id) {
-      navigate(`/places/${pkg.fsq_place_id}`);
-    }
+    navigate(`/travel-packages/${pkg.fsq_place_id}`);
   };
 
   const formatCategories = (categories = []) => {
@@ -134,10 +131,11 @@ const TravelPackageList = () => {
             </div>
           </div>
 
+
           {/* 主内容区 */}
           <div className="main-content">
             <div className="results-header">
-              <span>共找到 {packages.length} 个场馆</span>
+              <span>共找到 {packages.length} 個景點</span>
             </div>
 
             {/* 错误状态 */}
@@ -148,7 +146,7 @@ const TravelPackageList = () => {
               </div>
             )}
 
-            {/* 场馆网格 */}
+            {/* 景點列表 */}
             <div className="packages-grid">
               {packages.map(pkg => (
                 <div
@@ -156,7 +154,7 @@ const TravelPackageList = () => {
                   className="package-card"
                   onClick={() => handlePackageClick(pkg)}
                 >
-                  {/* 场馆图片/分类icon */}
+                  {/* 景點圖片/分類icon */}
                   <div className="package-image">
                     {pkg.photos && pkg.photos.length > 0 ? (
                       <img src={pkg.photos[0]} alt={pkg.name} />
@@ -167,7 +165,7 @@ const TravelPackageList = () => {
                     )}
                   </div>
 
-                  {/* 场馆信息 */}
+                  {/* 景點信息 */}
                   <div className="package-info">
                     <div className="package-location">
                       <FontAwesomeIcon icon={faMapMarkerAlt} className="location-icon" />
@@ -226,7 +224,7 @@ const TravelPackageList = () => {
               ))}
             </div>
 
-            {/* 加载骨架屏 */}
+            {/* 骨架屏 */}
             {loading && (
               <div className="skeleton-list">
                 {Array.from({ length: 6 }).map((_, idx) => (
@@ -270,7 +268,7 @@ const TravelPackageList = () => {
             {!loading && pagination.hasMore && packages.length > 0 && (
               <div className="load-more">
                 <button onClick={handleLoadMore}>
-                  加载更多场馆
+                  加载更多景點
                 </button>
               </div>
             )}
@@ -279,7 +277,7 @@ const TravelPackageList = () => {
             {!loading && packages.length === 0 && !error && (
               <EmptyState
                 icon="search"
-                title="暂无符合条件的场馆"
+                title="暂无符合条件的景點"
                 description="试试调整筛选条件或者浏览其他目的地"
                 actionText={null}
               />

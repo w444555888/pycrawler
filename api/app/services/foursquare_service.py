@@ -38,7 +38,7 @@ class FoursquareAPIService:
             print(f"请求处理异常: {e}")
             raise_error(500, f"请求处理异常: {str(e)}")
     
-    # 二次封装更具体的 API 方法，适合在服务层调用
+    # 一次封裝更具体的 API 方法，适合在服务层调用
 
     async def search_places(self, 
                            query: str = None, 
@@ -216,7 +216,9 @@ class FoursquareAPIService:
         return processed_hours
     
 
-    # 三次封裝使用更方便的高階方法，適合直接在路由中調用
+
+
+    # 二次封裝使用更方便的高階方法，適合直接在路由中調用
 
     # 景点相关的搜索方法
     async def search_attractions(self, 
@@ -234,8 +236,8 @@ class FoursquareAPIService:
 
 
     async def get_enhanced_place_info(self, fsq_id: str) -> Dict:
-        """获取增强的地点信息（包含照片和营业时间）"""
-        # 并行请求基本信息、照片和营业时间
+        """获取增强的地点信息（包含照片和营业时间）因免費帳號部分內容找不到"""
+        # 異步並行請求詳細信息、照片和營業時間，提升效率
         tasks = [
             self.get_place_details(fsq_id),
             self.get_place_photos(fsq_id),
@@ -273,7 +275,7 @@ class FoursquareAPIService:
             lat, lng = map(float, ll.split(",")) if ll else (None, None)
 
             # 搜索景点（获取基础数据）
-            attractions = await self.search_attractions(ll=ll, limit=15)
+            attractions = await self.search_attractions(ll=ll, limit=50)
 
             # 补强每个景点信息
             async def enrich(place):
