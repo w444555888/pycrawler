@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.orm import selectinload
 from typing import Dict, List, Optional
+from app.utils.redis_client import get_cache, set_cache
 from app.models.travel_package import TravelPackage
 from app.models.user import User
 from app.services.foursquare_service import foursquare_service
@@ -25,7 +26,12 @@ async def list_travel_packages(
         if not city:
             raise_error(400, "必须指定城市(city)参数")
 
-        city_data = await foursquare_service.create_city_travel_data(city)
+        cache_key = f"city_travel_data:{city}"
+        city_data = await get_cache(cache_key)
+        if not city_data:
+            city_data = await foursquare_service.create_city_travel_data(city)
+            await set_cache(cache_key, city_data, expire=3600)  # 1小时
+
         attractions = city_data.get("attractions", [])
         try:
             offset = int(offset)
@@ -37,7 +43,7 @@ async def list_travel_packages(
         if limit <= 0:
             limit = 20
         packages = attractions[offset:offset+limit] if isinstance(attractions, list) else []
-        return success( 
+        return success(
             data={
                 "packages": packages,
                 "totalPlaces": city_data.get("total_places"),

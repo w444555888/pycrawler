@@ -85,10 +85,6 @@ DATABASE_URL=postgresql+asyncpg://postgres.your_project_id:your_password@aws-1-a
 
 # Redis Configuration
 REDIS_URL=redis://localhost:6379/0
-
-# Amadeus API Configuration  
-AMADEUS_KEY=47FraKn90PbAmZ79AMT2mCKMTUHxNNVG
-AMADEUS_SECRET=2tzRCn2qBInDGM9A
 ```
 
 ### 步骤 4: 安装依赖
@@ -242,7 +238,6 @@ pycrawler/
 │   │   ├── routes/        # API 路由
 │   │   ├── services/      # 业务逻辑服务
 │   │   └── utils/         # 工具函数
-│   ├── alembic/           # [已删除] 数据库通过模型自动创建
 │   └── requirements.txt   # Python 依赖
 ├── client/                # React 用户端
 ├── admin/                 # React 管理后台

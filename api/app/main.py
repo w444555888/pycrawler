@@ -22,14 +22,14 @@ app = FastAPI(title="Hotel Booking API")
 async def on_startup():
     await init_db()
     # 暂时禁用 Redis
-    # await init_redis()  # 初始化 Redis
+    await init_redis()  # 初始化 Redis
     await start_scheduler()  # 启动定时任务调度器
 
 # 关闭时停止定时任务
 @app.on_event("shutdown")
 async def on_shutdown():
     await stop_scheduler()  # 停止定时任务调度器
-    # await close_redis()  # 关闭 Redis 连接
+    await close_redis()  # 关闭 Redis 连接
 
 # 設定 CORS
 app.add_middleware(

@@ -20,16 +20,17 @@ services:
     container_name: pycrawler-api
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres.your_project:your_password@aws-region.pooler.supabase.com:5432/postgres
-      - REDIS_URL=redis://redis:6379/0
-      - DEBUG=false
+      REDIS_URL: redis://redis:6379/0
+      DEBUG: "false"
     depends_on:
       redis:
         condition: service_healthy
     volumes:
       - ./api:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 volumes:
   redis_data:
