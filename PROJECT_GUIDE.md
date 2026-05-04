@@ -18,7 +18,6 @@
 - **SQLAlchemy 2.0**: 异步 ORM  
 - **Supabase**: PostgreSQL 云数据库
 - **Redis**: 会话存储和缓存
-- **Amadeus API**: 航班数据接口
 
 ### 前端
 - **React.js**: 用户界面 (client/)
@@ -218,16 +217,8 @@ docker build -t pycrawler-api .
 docker run -p 8000:8000 --env-file .env pycrawler-api
 ```
 
-### 生产环境变量
-```bash
-# 生产环境配置
-DATABASE_URL=postgresql+asyncpg://postgres.project_id:password@aws-region.pooler.supabase.com:5432/postgres
-REDIS_URL=redis://your-redis-cloud-url:6379
-AMADEUS_KEY=your_production_amadeus_key
-AMADEUS_SECRET=your_production_amadeus_secret
-```
 
-## 📋 项目结构
+##  项目结构
 
 ```
 pycrawler/
@@ -245,22 +236,8 @@ pycrawler/
 └── README.md             # 项目文档
 ```
 
-## 🧪 测试
 
-```bash
-# API 单元测试  
-cd api
-poetry run pytest
-
-# 前端测试
-cd client
-npm test
-
-cd admin
-npm test
-```
-
-## 🌟 Supabase 优势
+##  Supabase 优势
 
 相比之前的 MongoDB，现在享受：
 - **🚀 更好性能**: PostgreSQL 查询优化
@@ -311,41 +288,3 @@ asyncpg.exceptions.InvalidPasswordError
 # 重启 API 服务器，会自动重新创建表
 poetry run uvicorn app.main:app --reload --port 8000
 ```
-
-## 🤝 贡献
-
-1. Fork 项目
-2. 创建功能分支: `git checkout -b feature-name`
-3. 提交更改: `git commit -m 'Add feature'` 
-4. 推送分支: `git push origin feature-name`
-5. 提交 Pull Request
-
-## 📄 许可证
-
-本项目采用 [MIT 许可证](LICENSE)
-
-## 📞 支持
-
-- 📧 邮件: support@example.com
-- 🐛 问题报告: [GitHub Issues](https://github.com/your-repo/pycrawler/issues)
-- 📖 文档: [项目文档](https://your-docs-url.com)
-
-## 📝 更新日志
-
-### v2.0.0 (2026-04-02)
-- ✨ **重大更新**: 从 MongoDB 迁移到 Supabase (PostgreSQL)
-- 🚀 **性能优化**: SQLAlchemy 2.0 异步查询 + IPv4 Pooler
-- 🔧 **新增功能**: SQLAlchemy 自动表创建机制
-- 📊 **架构优化**: 重构数据库结构和索引
-
-### v1.0.0 (2023-12-01)  
-- 🎉 初始版本发布
-- 🏨 酒店预订核心功能
-- ✈️ 航班预订集成
-- 👥 用户管理系统
-
----
-
-**🎉 恭喜！你的现代化酒店预订系统已成功部署到 Supabase！**
-
-⭐ **如果这个项目对你有帮助，请给个星标支持！**
