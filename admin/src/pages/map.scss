@@ -1,0 +1,154 @@
+.map-page {
+  padding: 24px;
+
+  .map-search-row {
+    margin-bottom: 20px;
+  }
+
+  .search-results-card {
+    margin-bottom: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .search-result-item {
+    padding: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, padding-left 0.3s;
+
+    &.has-border {
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    &:hover {
+      background-color: #f5f5f5;
+      padding-left: 12px;
+    }
+
+    .result-name {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .result-address {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .result-coords {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+  }
+
+  .map-card {
+    margin-bottom: 20px;
+  }
+
+  .marker-name-input {
+    margin-bottom: 10px;
+  }
+
+  .location-actions {
+    width: 100%;
+  }
+
+  .empty-message {
+    color: #999;
+  }
+
+  .detail-table-card {
+    margin-top: 20px;
+  }
+
+  .map-container {
+    display: block !important;
+    height: 100% !important;
+    width: 100% !important;
+  }
+
+  .search-results {
+    margin-bottom: 20px;
+
+    .result-item {
+      padding: 12px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background-color: #f5f5f5;
+        padding-left: 16px;
+      }
+
+      .result-name {
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      .result-address {
+        font-size: 12px;
+        color: #999;
+      }
+
+      .result-coords {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+      }
+    }
+  }
+
+  .marker-list {
+    max-height: 400px;
+    overflow-y: auto;
+
+    .marker-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      border-bottom: 1px solid #f0f0f0;
+      gap: 8px;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .marker-info {
+        flex: 1;
+        font-size: 12px;
+
+        strong {
+          display: block;
+          margin-bottom: 4px;
+        }
+
+        small {
+          color: #666;
+        }
+      }
+    }
+  }
+}
+
+/* Leaflet 地圖樣式修復 */
+.leaflet-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  height: 100% !important;
+  width: 100% !important;
+  background-color: #e5e3df;
+}
+
+/* 確保 Ant Design Card 内容區域正確顯示 */
+.ant-card-body {
+  padding: 0;
+  height: 100%;
+}

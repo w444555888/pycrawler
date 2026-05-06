@@ -21,6 +21,7 @@ import FlightOrders from './pages/FlightOrders';
 import HotelFlashSale from './pages/HotelFlashSale';
 import HotelFlashSaleOrders from './pages/HotelFlashSaleOrders';
 import SubscribeList from './pages/SubscribeList';
+import Map from './pages/Map';
 
 
 
@@ -105,6 +106,7 @@ function App() {
             <Route path="orders" element={<Orders />} />
             <Route path="flights" element={<Flights />} />
             <Route path="flight-orders" element={<FlightOrders />} />
+            <Route path="map" element={<Map />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>
