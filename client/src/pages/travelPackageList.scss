@@ -34,7 +34,7 @@
   background-color: #f8f9fa;
 
   .page-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #6c85e9 0%, #0455eb 100%);
     color: white;
     padding: 60px 0;
     text-align: center;
@@ -57,6 +57,19 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
+
+    .title{
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .subtitle{
+      font-size: 0.5rem;
+      opacity: 0.9;
+      margin: 0;
+    }
   }
 
   .content-wrapper {
@@ -88,7 +101,7 @@
     }
 
     .filter-section {
-      h3 {
+      .search-title {
         color: #333;
         margin-bottom: 20px;
         font-size: 1.2rem;
@@ -152,20 +165,16 @@
       .search-btn {
         width: 100%;
         padding: 10px;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #6c85e9 0%, #0455eb 100%);
         border: none;
         border-radius: 8px;
         color: #fff;
-        font-size: 1rem;
+        font-size: 0.8rem;
         font-weight: 600;
         cursor: pointer;
         margin-bottom: 10px;
         box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
         transition: background 0.2s, box-shadow 0.2s;
-        &:hover {
-          background: linear-gradient(90deg, #5a6fd8 0%, #764ba2 100%);
-          box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
-        }
         &:disabled {
           background: #e9ecef;
           color: #aaa;
@@ -181,7 +190,7 @@
         border: 1px solid #dee2e6;
         border-radius: 8px;
         color: #6c757d;
-        font-size: 0.95rem;
+        font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.2s ease;
         &:hover {
@@ -278,7 +287,7 @@
         flex-direction: column;
 
         .package-location {
-          color: #667eea;
+          color: #000000;
           font-size: 0.95rem;
           margin-bottom: 8px;
           font-weight: 500;
@@ -288,8 +297,10 @@
         }
 
         .package-title {
-          color: #333;
-          font-size: 1.1rem;
+          background: linear-gradient(135deg, #6c85e9 0%, #0455eb 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          font-size: 1rem;
           font-weight: 600;
           margin-bottom: 10px;
           line-height: 1.3;

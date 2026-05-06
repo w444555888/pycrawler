@@ -48,7 +48,7 @@ const TravelPackageList = () => {
       
       setError(null);
     } else {
-      setError(res.message || '获取套餐失败');
+      setError(res.message || '獲取景點失敗');
     }
     setLoading(false);
   };
@@ -87,8 +87,8 @@ const TravelPackageList = () => {
       {/* 头部 */}
       <div className="page-header">
         <div className="container">
-          <h1>探索景點套餐</h1>
-          <p>MIKEY 探索景點套餐</p>
+          <p className='title'>探索景點套餐</p>
+          <p className='subtitle'>MIKEY 探索景點套餐</p>
         </div>
       </div>
 
@@ -97,12 +97,11 @@ const TravelPackageList = () => {
           {/* 侧边栏筛选 */}
           <div className="sidebar">
             <div className="filter-section">
-              <h3>目的地搜索</h3>
+              <p className='search-title'>目的地搜索</p>
               <div className="filter-group">
-                <label>城市</label>
                 <input
                   type="text"
-                  placeholder="输入城市名称"
+                  placeholder="輸入城市名稱"
                   value={filters.city}
                   onChange={(e) => handleCityChange(e.target.value)}
                 />
@@ -177,7 +176,7 @@ const TravelPackageList = () => {
                       )}
                     </div>
 
-                    <h3 className="package-title">{pkg.name}</h3>
+                    <p className="package-title">{pkg.name}</p>
 
                     <div className="package-details">
                       {pkg.categories && pkg.categories.length > 0 && (
@@ -195,13 +194,13 @@ const TravelPackageList = () => {
                       {pkg.website && (
                         <div className="detail-item">
                           <span className="icon"><FontAwesomeIcon icon={faLink} /></span>
-                          <a href={pkg.website} target="_blank" rel="noopener noreferrer">官网</a>
+                          <a href={pkg.website} target="_blank" rel="noopener noreferrer">官網</a>
                         </div>
                       )}
                     </div>
 
                     <p className="package-description">
-                      {pkg.description || '暂无简介'}
+                      {pkg.description || '暫無簡介'}
                     </p>
 
                     <div className="package-footer">
@@ -212,7 +211,7 @@ const TravelPackageList = () => {
                             <span>{pkg.rating.toFixed(1)}</span>
                           </>
                         ) : (
-                          <span className="no-rating">暂无评分</span>
+                          <span className="no-rating">暫無評分</span>
                         )}
                       </div>
                       <div className="package-price">
@@ -236,9 +235,9 @@ const TravelPackageList = () => {
                       <div className="package-location">
                         <Skeleton width={120} height={18} />
                       </div>
-                      <h3 className="package-title">
+                      <p className="package-title">
                         <Skeleton width={140} height={22} />
-                      </h3>
+                      </p>
                       <div className="package-details">
                         <div className="detail-item">
                           <Skeleton width={80} height={16} />
@@ -277,8 +276,8 @@ const TravelPackageList = () => {
             {!loading && packages.length === 0 && !error && (
               <EmptyState
                 icon="search"
-                title="暂无符合条件的景點"
-                description="试试调整筛选条件或者浏览其他目的地"
+                title="無符合景點"
+                description="請嘗試更改搜索條件或稍後再試。"
                 actionText={null}
               />
             )}

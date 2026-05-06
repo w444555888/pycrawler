@@ -15,6 +15,25 @@ from app.utils.file_utils import get_upload_dir
 from app.scheduler import start_scheduler, stop_scheduler
 from app.utils.redis_client import init_redis, close_redis
 
+# 配置 logging
+LOG_LEVEL = logging.DEBUG
+
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(
+            os.path.join(os.getcwd(), "app.log"),
+            encoding="utf-8"
+        )
+    ]
+)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(LOG_LEVEL)
+
+
 app = FastAPI(title="Hotel Booking API")
 
 # 启动时初始化数据库和定时任务

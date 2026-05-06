@@ -19,7 +19,7 @@ async def route_list_packages(
     offset: int = Query(0, description="偏移量"),
     session: AsyncSession = Depends(get_session)
 ):
-    """获取旅游套餐列表"""
+    """獲取景點列表"""
     return await list_travel_packages(
         session=session,
         city=city,

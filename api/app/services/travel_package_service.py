@@ -21,7 +21,7 @@ async def list_travel_packages(
     limit: int = 20,
     offset: int = 0
 ):
-    """通过 Foursquare 实时获取旅游套餐列表（UI layer only）"""
+    """通过 Foursquare 實時獲取景點列表（UI layer only）"""
     try:
         if not city:
             raise_error(400, "必须指定城市(city)参数")

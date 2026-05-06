@@ -12,7 +12,6 @@ import BookingFlight from "../pages/BookingFlight"
 import FlashSaleList from "../pages/FlashSaleList"
 import FlashSaleDetail from "../pages/FlashSaleDetail"
 import TravelPackageList from "../pages/TravelPackageList"
-import TravelPackageDetail from "../pages/TravelPackageDetail"
 
 
 export const ROUTES = {
@@ -29,8 +28,7 @@ export const ROUTES = {
   BOOKINGFLIGHT: '/bookingFlight',
   HOTELFLASHSALE: '/flash-sale',
   HOTELFLASHSALEDetail: '/flash-sale/:id',
-  TRAVEL_PACKAGES: '/travel-packages',
-  TRAVEL_PACKAGE_DETAIL: '/travel-packages/:packageId',
+  TRAVEL_PACKAGES: '/travel-packages'
 }
 
 
@@ -103,11 +101,6 @@ export const routeConfig = [
   {
     path: ROUTES.TRAVEL_PACKAGES,
     element: TravelPackageList,
-    requireAuth: false
-  },
-  {
-    path: ROUTES.TRAVEL_PACKAGE_DETAIL,
-    element: TravelPackageDetail,
     requireAuth: false
   }
 ]

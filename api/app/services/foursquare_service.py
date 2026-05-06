@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.utils.response import success
 from app.utils.error_handler import raise_error
 
+logger = logging.getLogger(__name__)
 
 class FoursquareAPIService:
     """Foursquare API 服务类"""
@@ -32,14 +33,14 @@ class FoursquareAPIService:
                 response.raise_for_status()
                 return response.json()
         except httpx.HTTPError as e:
-            print(f"Foursquare API 请求失败: {e}")
+            logger.error(f"Foursquare API 请求失败: {e}")
             raise_error(500, f"Foursquare API 请求失败: {str(e)}")
         except Exception as e:
-            print(f"请求处理异常: {e}")
+            logger.error(f"请求处理异常: {e}")
             raise_error(500, f"请求处理异常: {str(e)}")
     
-    # 一次封裝更具体的 API 方法，适合在服务层调用
 
+    #  API方法：搜索地点、获取地点详情、获取地点照片、获取营业时间等
     async def search_places(self, 
                            query: str = None, 
                            ll: str = None,
@@ -72,22 +73,21 @@ class FoursquareAPIService:
         if categories:
             params["categories"] = categories
         data = await self._make_request("places/search", params)
-        logging.info(f"[Foursquare][search_places] 原始返回: {data}")
+        logger.info(f"[Foursquare][search_places] 原始返回: {data}")
         results = data.get("results") or data.get("data") or []
         return self._process_places(results)
     
     async def get_place_details(self, fsq_place_id: str) -> Dict:
         """获取地点详细信息（新版）"""
         data = await self._make_request(f"places/{fsq_place_id}")
-        logging.info(f"[Foursquare][get_place_details] 原始返回: {data}")
+        logger.info(f"[Foursquare][get_place_details] 原始返回: {data}")
         return self._process_single_place(data)
     
     async def get_place_photos(self, fsq_place_id: str, limit: int = 10) -> List[str]:
         """获取地点照片（新版）"""
         params = {"limit": min(limit, 50)}
         data = await self._make_request(f"places/{fsq_place_id}/photos", params)
-        print(f"[Foursquare][get_place_photos] 原始返回: {data}")
-        logging.info(f"[Foursquare][get_place_photos] 原始返回: {data}")
+        logger.info(f"[Foursquare][get_place_photos] 原始返回: {data}")
         
         photos = []
         for photo in data.get("results", []) or data.get("data", []):
@@ -99,10 +99,10 @@ class FoursquareAPIService:
         """获取地点营业时间"""
         try:
             data = await self._make_request(f"places/{fsq_id}/hours")
-            logging.info(f"[Foursquare][get_place_hours] 原始返回: {data}")
+            logger.info(f"[Foursquare][get_place_hours] 原始返回: {data}")
             return self._process_hours(data.get("hours", {}))
         except Exception as e:
-            logging.error(f"[Foursquare][get_place_hours] 异常: {e}")
+            logger.error(f"[Foursquare][get_place_hours] 异常: {e}")
             return {}
     
     def _process_places(self, places: List[Dict]) -> List[Dict]:
@@ -217,10 +217,7 @@ class FoursquareAPIService:
     
 
 
-
-    # 二次封裝使用更方便的高階方法，適合直接在路由中調用
-
-    # 景点相关的搜索方法
+    # 景點搜索和數據補強方法，服務層調用
     async def search_attractions(self, 
                                ll: str, 
                                limit: int = 20,
@@ -233,7 +230,6 @@ class FoursquareAPIService:
             limit=limit,
             radius=radius
         )
-
 
     async def get_enhanced_place_info(self, fsq_id: str) -> Dict:
         """获取增强的地点信息（包含照片和营业时间）因免費帳號部分內容找不到"""
@@ -261,10 +257,9 @@ class FoursquareAPIService:
 
             return enhanced_info
         except Exception as e:
-            print(f"获取增强信息失败: {e}")
+            logger.error(f"获取增强信息失败: {e}")
             return {}
     
-
     async def create_city_travel_data(self, city: str) -> Dict:
         """為特定城市建立旅遊資料（保留 raw + 補強 enhanced）"""
         try:
@@ -273,11 +268,11 @@ class FoursquareAPIService:
                 raise_error(400, f"無法取得城市 {city} 的經緯度")
 
             lat, lng = map(float, ll.split(",")) if ll else (None, None)
+            logger.info(f"[Foursquare][create_city_travel_data] 城市: {city}, 經緯度: {ll}")
 
-            # 搜索景点（获取基础数据）
             attractions = await self.search_attractions(ll=ll, limit=50)
+            logger.info(f"[Foursquare][create_city_travel_data] 搜索到 {len(attractions)} 個景點")
 
-            # 补强每个景点信息
             async def enrich(place):
                 fsq_id = place.get("fsq_place_id")
                 if not fsq_id:
@@ -298,19 +293,19 @@ class FoursquareAPIService:
                     "description": enhanced.get("description", place.get("description")),
                 }
 
-            # 并行处理补强请求，提升效率
+
             results = await asyncio.gather(
                 *[enrich(p) for p in attractions],
                 return_exceptions=True
             )
 
-            # 过滤掉补强过程中可能出现的异常结果
             attractions = [
                 r for r in results
                 if isinstance(r, dict)
             ]
+            logger.info(f"[Foursquare][create_city_travel_data] 補強後景點數: {len(attractions)}")
 
-            return {
+            final_result = {
                 "city": city,
                 "ll": ll,
                 "latitude": lat,
@@ -320,9 +315,11 @@ class FoursquareAPIService:
                 "generated_at": datetime.now().isoformat(),
                 "total_places": len(attractions)
             }
+            logger.info(f"[Foursquare][create_city_travel_data] 最終結果: {final_result}")
+            return final_result
 
         except Exception as e:
-            print(f"創建城市旅遊資料失敗: {e}")
+            logger.error(f"創建城市旅遊資料失敗: {e}")
             raise_error(500, f"創建城市旅遊資料失敗: {str(e)}")
 
 

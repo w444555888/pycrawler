@@ -5,8 +5,6 @@ from app.core.config import settings
 from app.db import AsyncSessionLocal
 import logging
 
-# 設置日誌
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
