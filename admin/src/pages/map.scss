@@ -1,65 +1,8 @@
 .map-page {
   padding: 24px;
 
-  .map-search-row {
-    margin-bottom: 20px;
-  }
-
-  .search-results-card {
-    margin-bottom: 20px;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-
-  .search-result-item {
-    padding: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s, padding-left 0.3s;
-
-    &.has-border {
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    &:hover {
-      background-color: #f5f5f5;
-      padding-left: 12px;
-    }
-
-    .result-name {
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-
-    .result-address {
-      font-size: 12px;
-      color: #999;
-    }
-
-    .result-coords {
-      font-size: 12px;
-      color: #666;
-      margin-top: 4px;
-    }
-  }
-
   .map-card {
     margin-bottom: 20px;
-  }
-
-  .marker-name-input {
-    margin-bottom: 10px;
-  }
-
-  .location-actions {
-    width: 100%;
-  }
-
-  .empty-message {
-    color: #999;
-  }
-
-  .detail-table-card {
-    margin-top: 20px;
   }
 
   .map-container {
@@ -68,71 +11,94 @@
     width: 100% !important;
   }
 
-  .search-results {
-    margin-bottom: 20px;
+  // 叫車導航樣式
+  .navigation-card {
+    border: 2px solid #1890ff;
 
-    .result-item {
+    .route-status {
+      background-color: #f0f7ff;
       padding: 12px;
-      border-bottom: 1px solid #f0f0f0;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      border-radius: 4px;
+      margin-bottom: 8px;
 
-      &:last-child {
-        border-bottom: none;
-      }
+      .status-item {
+        margin: 4px 0;
+        font-size: 13px;
+        line-height: 1.6;
 
-      &:hover {
-        background-color: #f5f5f5;
-        padding-left: 16px;
-      }
-
-      .result-name {
-        font-weight: 500;
-        margin-bottom: 4px;
-      }
-
-      .result-address {
-        font-size: 12px;
-        color: #999;
-      }
-
-      .result-coords {
-        font-size: 12px;
-        color: #666;
-        margin-top: 4px;
+        &:last-child {
+          margin-bottom: 0;
+        }
       }
     }
-  }
 
-  .marker-list {
-    max-height: 400px;
-    overflow-y: auto;
+    .route-info {
+      .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
 
-    .marker-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px;
-      border-bottom: 1px solid #f0f0f0;
-      gap: 8px;
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      .marker-info {
-        flex: 1;
-        font-size: 12px;
-
-        strong {
-          display: block;
-          margin-bottom: 4px;
+        &:last-child {
+          border-bottom: none;
         }
 
-        small {
-          color: #666;
+        .label {
+          font-weight: 500;
+          color: #333;
+        }
+
+        .value {
+          font-weight: 600;
+          color: #1890ff;
+
+          &.fare {
+            color: #1890ff;
+          }
         }
       }
+    }
+
+    .vehicle-options {
+      .vehicle-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        margin-bottom: 8px;
+        background-color: #fafafa;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        transition: all 0.3s;
+        cursor: pointer;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        &:hover {
+          background-color: #f0f7ff;
+          border-color: #1890ff;
+        }
+
+        .vehicle-name {
+          font-weight: 500;
+          color: #333;
+        }
+
+        .vehicle-price {
+          font-weight: 600;
+          color: #1890ff;
+        }
+      }
+    }
+
+    .placeholder-text {
+      text-align: center;
+      color: #999;
+      padding: 20px 0;
+      font-size: 13px;
     }
   }
 }
