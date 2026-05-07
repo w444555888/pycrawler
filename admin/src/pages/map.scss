@@ -52,10 +52,6 @@
         .value {
           font-weight: 600;
           color: #1890ff;
-
-          &.fare {
-            color: #1890ff;
-          }
         }
       }
     }
@@ -108,40 +104,6 @@
           font-size: 12px;
           color: #666;
           margin-top: 4px;
-        }
-      }
-    }
-
-    .vehicle-options {
-      .vehicle-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px;
-        margin-bottom: 8px;
-        background-color: #fafafa;
-        border: 1px solid #d9d9d9;
-        border-radius: 4px;
-        transition: all 0.3s;
-        cursor: pointer;
-
-        &:last-child {
-          margin-bottom: 0;
-        }
-
-        &:hover {
-          background-color: #f0f7ff;
-          border-color: #1890ff;
-        }
-
-        .vehicle-name {
-          font-weight: 500;
-          color: #333;
-        }
-
-        .vehicle-price {
-          font-weight: 600;
-          color: #1890ff;
         }
       }
     }

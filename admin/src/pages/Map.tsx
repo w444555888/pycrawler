@@ -56,7 +56,7 @@ const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound, se
   // Ref 用來存儲所有路線
   const allRoutesRef = React.useRef<any[]>([]);
 
-  // 同步 onRouteFound 回調到 ref
+  // 同步回調到 ref
   React.useEffect(() => {
     onRouteFoundRef.current = onRouteFound;
   }, [onRouteFound]);
@@ -101,15 +101,7 @@ const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound, se
         extendToWaypoints: true,                         
         missingRouteTolerance: 0                    
       },
-      showAlternatives: true,
-      altLineOptions: {
-        styles: [
-          { color: 'black', opacity: 0.15, weight: 9 },
-          { color: 'white', opacity: 0.8, weight: 6 },
-          { color: '#ff9800', opacity: 0.8, weight: 3, dashArray: '5,10' }
-        ]
-      },
-      
+      showAlternatives: false,
       show: true,                                        
       addWaypoints: false,                           
       routeWhileDragging: false,                     
@@ -161,7 +153,7 @@ const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound, se
     if (routingControlRef.current && allRoutesRef.current && selectedRouteIndex < allRoutesRef.current.length) {
       try {
         // 重新排列路線：把選中的路線放在第一位作為主線，其他的作為替代線
-        const reorderedRoutes = allRoutesRef.current.slice(); // 複製陣列
+        const reorderedRoutes = allRoutesRef.current.slice();
         const selectedRoute = reorderedRoutes.splice(selectedRouteIndex, 1)[0];
         reorderedRoutes.unshift(selectedRoute);
         
@@ -194,7 +186,6 @@ const Map: React.FC = () => {
   const [routeStart, setRouteStart] = useState<L.LatLng | null>(null);
   const [routeEnd, setRouteEnd] = useState<L.LatLng | null>(null);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
-  const [estimatedFare, setEstimatedFare] = useState<number>(0);
   const [startLocationName, setStartLocationName] = useState<string>('');
   const [endLocationName, setEndLocationName] = useState<string>('');
   const [allRoutes, setAllRoutes] = useState<RouteInfo[]>([]);
@@ -230,7 +221,6 @@ const Map: React.FC = () => {
     setRouteStart(null);
     setRouteEnd(null);
     setRouteInfo(null);
-    setEstimatedFare(0);
     setStartLocationName('');
     setEndLocationName('');
     setAllRoutes([]);
@@ -238,13 +228,7 @@ const Map: React.FC = () => {
     message.success('路由已重置');
   };
 
-  // 計算車費
-  const calculateEstimatedFare = (distance: number) => {
-    // base count $70 + distance fare $5/km
-    const baseFare = 70;
-    const distanceFare = distance * 5;
-    return baseFare + distanceFare;
-  };
+
 
   // 處理路由找到事件
   const handleRouteFound = (routes: RouteInfo[]) => {
@@ -256,8 +240,6 @@ const Map: React.FC = () => {
       setRouteInfo(selectedRoute);
       setStartLocationName(selectedRoute.startName || '');
       setEndLocationName(selectedRoute.endName || '');
-      const fare = calculateEstimatedFare(selectedRoute.distance);
-      setEstimatedFare(fare);
       message.success(`路線已計算: ${selectedRoute.summary} (${routes.length > 1 ? `共${routes.length}條` : '唯一'}路線)`);
     }
   };
@@ -357,8 +339,6 @@ const Map: React.FC = () => {
                           onClick={() => {
                             setSelectedRouteIndex(index);
                             setRouteInfo(route);
-                            const fare = calculateEstimatedFare(route.distance);
-                            setEstimatedFare(fare);
                             message.info(`已選擇路線 ${index + 1}`);
                           }}
                         >
@@ -384,26 +364,6 @@ const Map: React.FC = () => {
                     <div className="info-item">
                       <span className="label">預計時間：</span>
                       <span className="value">{routeInfo.duration} 分鐘</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="label">預估車費：</span>
-                      <span className="value fare">NT${estimatedFare.toFixed(0)}</span>
-                    </div>
-                  </div>
-
-                  <Divider />
-                  <div className="vehicle-options">
-                    <div className="vehicle-item">
-                      <span className="vehicle-name">經濟車</span>
-                      <span className="vehicle-price">NT${(estimatedFare * 1).toFixed(0)}</span>
-                    </div>
-                    <div className="vehicle-item">
-                      <span className="vehicle-name">舒適車</span>
-                      <span className="vehicle-price">NT${(estimatedFare * 1.3).toFixed(0)}</span>
-                    </div>
-                    <div className="vehicle-item">
-                      <span className="vehicle-name">高級車</span>
-                      <span className="vehicle-price">NT${(estimatedFare * 1.8).toFixed(0)}</span>
                     </div>
                   </div>
 
