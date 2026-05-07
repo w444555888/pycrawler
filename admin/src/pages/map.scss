@@ -60,6 +60,58 @@
       }
     }
 
+    // 替代路線樣式
+    .alternative-routes {
+      background-color: #fafafa;
+      padding: 12px;
+      border-radius: 4px;
+      border-left: 3px solid #1890ff;
+
+      .alternative-routes-title {
+        margin-bottom: 12px;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .route-option {
+        padding: 10px;
+        margin-bottom: 8px;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        cursor: pointer;
+        background-color: #fafafa;
+        transition: all 0.3s;
+        
+        &:hover {
+          border-color: #1890ff !important;
+          background-color: #f0f7ff !important;
+          transform: translateY(-2px);
+        }
+
+        &.active {
+          background-color: #e6f7ff;
+          border: 2px solid #1890ff;
+          font-weight: 500;
+        }
+
+        .route-option-header {
+          display: flex;
+          justify-content: space-between;
+          font-size: 12px;
+
+          .route-option-time {
+            color: #ff9800;
+          }
+        }
+
+        .route-option-details {
+          font-size: 12px;
+          color: #666;
+          margin-top: 4px;
+        }
+      }
+    }
+
     .vehicle-options {
       .vehicle-item {
         display: flex;

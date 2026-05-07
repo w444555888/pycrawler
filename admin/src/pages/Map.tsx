@@ -39,11 +39,12 @@ const MapResizeFix = () => {
 interface RoutingProps {
   start?: L.LatLng;
   end?: L.LatLng;
-  onRouteFound?: (routeInfo: RouteInfo) => void;
+  onRouteFound?: (routes: RouteInfo[]) => void;
+  selectedRouteIndex?: number;
 }
 
 // 路由顯示組件：在地圖上繪製從 start 到 end 的路線，並傳回路線信息（距離、時間等）
-const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound }) => {
+const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound, selectedRouteIndex = 0 }) => {
   // 從 react-leaflet 獲取當前地圖實例（MapContainer 會自動提供）
   const map = useMap();
   // Ref 用來存儲 Leaflet 的路由控制對象，避免組件重新渲染時重複創建
@@ -52,11 +53,13 @@ const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound }) 
   const onRouteFoundRef = React.useRef(onRouteFound);
   // Ref 用來存儲路由計算完成事件的處理函數
   const handleRouteFoundRef = React.useRef<any>(null);
+  // Ref 用來存儲所有路線
+  const allRoutesRef = React.useRef<any[]>([]);
 
-  // 第一個 useEffect：同步 onRouteFound 回調到 ref
+  // 同步 onRouteFound 回調到 ref
   React.useEffect(() => {
     onRouteFoundRef.current = onRouteFound;
-  }, [onRouteFound]); 
+  }, [onRouteFound]);
 
   // 第二個 useEffect：負責地圖路由的主要邏輯
   useEffect(() => {
@@ -70,7 +73,7 @@ const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound }) 
 
     // 當起點或終點改變時，需要先移除之前的路由，再創建新的
     if (routingControlRef.current) {
-      // 移除之前的事件監聽器：防止多個監聽器疊加導致重複調用回調
+      // 移除之前的事件監聽器
       if (handleRouteFoundRef.current) {
         routingControlRef.current.off('routesfound', handleRouteFoundRef.current);
       }
@@ -85,12 +88,10 @@ const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound }) 
         L.latLng(start.lat, start.lng),                   
         L.latLng(end.lat, end.lng)                        
       ],
-      
       // 設定路由規劃服務：使用免費的 OSRM（Open Source Routing Machine）
       router: L.Routing.osrmv1({
         serviceUrl: 'https://router.project-osrm.org/route/v1'
       }),
-
       lineOptions: {
         styles: [{ 
           color: '#3388ff',                             
@@ -100,7 +101,16 @@ const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound }) 
         extendToWaypoints: true,                         
         missingRouteTolerance: 0                    
       },
-      show: false,                                       
+      showAlternatives: true,
+      altLineOptions: {
+        styles: [
+          { color: 'black', opacity: 0.15, weight: 9 },
+          { color: 'white', opacity: 0.8, weight: 6 },
+          { color: '#ff9800', opacity: 0.8, weight: 3, dashArray: '5,10' }
+        ]
+      },
+      
+      show: true,                                        
       addWaypoints: false,                           
       routeWhileDragging: false,                     
       waypointNameFallback: function(index: number) {
@@ -110,19 +120,27 @@ const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound }) 
 
 
     handleRouteFoundRef.current = (e: any) => {
-      const route = e.routes[0];
-      if (route && onRouteFoundRef.current) {
-        const distance = (route.summary.totalDistance / 1000).toFixed(2);
-        const duration = Math.round(route.summary.totalTime / 60);
-        const startName = e.waypoints[0]?.name || '';
-        const endName = e.waypoints[1]?.name || '';
-        onRouteFoundRef.current({
-          distance: parseFloat(distance),                 
-          duration: duration,                             
-          summary: `${distance}km, 約${duration}分鐘`,   
-          startName,                                      
-          endName                                   
+      if (e.routes && e.routes.length > 0 && onRouteFoundRef.current) {
+        // 保存所有路線對象用於後續交互
+        allRoutesRef.current = e.routes;
+        
+        // 處理所有替代路線
+        const allRoutesInfo: RouteInfo[] = e.routes.map((route: any, index: number) => {
+          const distance = (route.summary.totalDistance / 1000).toFixed(2);
+          const duration = Math.round(route.summary.totalTime / 60);
+          const startName = e.waypoints[0]?.name || '';
+          const endName = e.waypoints[1]?.name || '';
+          
+          return {
+            distance: parseFloat(distance),
+            duration: duration,
+            summary: `${distance}km, 約${duration}分鐘`,
+            startName,
+            endName
+          };
         });
+        
+        onRouteFoundRef.current(allRoutesInfo);
       }
     };
 
@@ -137,6 +155,24 @@ const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound }) 
       }
     };
   }, [map, start?.lat, start?.lng, end?.lat, end?.lng]);
+
+  // 監聽 selectedRouteIndex 變化，更新地圖顯示和樣式
+  useEffect(() => {
+    if (routingControlRef.current && allRoutesRef.current && selectedRouteIndex < allRoutesRef.current.length) {
+      try {
+        // 重新排列路線：把選中的路線放在第一位作為主線，其他的作為替代線
+        const reorderedRoutes = allRoutesRef.current.slice(); // 複製陣列
+        const selectedRoute = reorderedRoutes.splice(selectedRouteIndex, 1)[0];
+        reorderedRoutes.unshift(selectedRoute);
+        
+        // 呼叫 setAlternatives，這樣選中的路線就會以主線樣式顯示
+        routingControlRef.current.setAlternatives(reorderedRoutes);
+      } catch (error) {
+        console.warn('Failed to update route display:', error);
+      }
+    }
+  }, [selectedRouteIndex]);
+
   return null;
 };
 
@@ -161,6 +197,8 @@ const Map: React.FC = () => {
   const [estimatedFare, setEstimatedFare] = useState<number>(0);
   const [startLocationName, setStartLocationName] = useState<string>('');
   const [endLocationName, setEndLocationName] = useState<string>('');
+  const [allRoutes, setAllRoutes] = useState<RouteInfo[]>([]);
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState<number>(0);
 
   // 處理地圖點擊 - 選擇路由起點和終點
   const handleLocationSelect = (latlng: L.LatLng) => {
@@ -195,6 +233,8 @@ const Map: React.FC = () => {
     setEstimatedFare(0);
     setStartLocationName('');
     setEndLocationName('');
+    setAllRoutes([]);
+    setSelectedRouteIndex(0);
     message.success('路由已重置');
   };
 
@@ -207,13 +247,19 @@ const Map: React.FC = () => {
   };
 
   // 處理路由找到事件
-  const handleRouteFound = (route: RouteInfo) => {
-    setRouteInfo(route);
-    setStartLocationName(route.startName || '');
-    setEndLocationName(route.endName || '');
-    const fare = calculateEstimatedFare(route.distance);
-    setEstimatedFare(fare);
-    message.success(`路線已計算: ${route.summary}`);
+  const handleRouteFound = (routes: RouteInfo[]) => {
+    setAllRoutes(routes);
+    setSelectedRouteIndex(0);
+    
+    if (routes.length > 0) {
+      const selectedRoute = routes[0];
+      setRouteInfo(selectedRoute);
+      setStartLocationName(selectedRoute.startName || '');
+      setEndLocationName(selectedRoute.endName || '');
+      const fare = calculateEstimatedFare(selectedRoute.distance);
+      setEstimatedFare(fare);
+      message.success(`路線已計算: ${selectedRoute.summary} (${routes.length > 1 ? `共${routes.length}條` : '唯一'}路線)`);
+    }
   };
 
   return (
@@ -248,6 +294,7 @@ const Map: React.FC = () => {
                   start={routeStart} 
                   end={routeEnd}
                   onRouteFound={handleRouteFound}
+                  selectedRouteIndex={selectedRouteIndex}
                 />
               )}
 
@@ -296,6 +343,39 @@ const Map: React.FC = () => {
               {routeInfo && (
                 <>
                   <Divider />
+                  
+                  {/* 替代路線選擇 */}
+                  {allRoutes.length > 1 && (
+                    <div className="alternative-routes">
+                      <p className="alternative-routes-title">
+                        選擇路線 ({allRoutes.length} 條可用)
+                      </p>
+                      {allRoutes.map((route, index) => (
+                        <div
+                          key={index}
+                          className={`route-option ${index === selectedRouteIndex ? 'active' : ''}`}
+                          onClick={() => {
+                            setSelectedRouteIndex(index);
+                            setRouteInfo(route);
+                            const fare = calculateEstimatedFare(route.distance);
+                            setEstimatedFare(fare);
+                            message.info(`已選擇路線 ${index + 1}`);
+                          }}
+                        >
+                          <div className="route-option-header">
+                            <span>路線 {index + 1}</span>
+                            <span className="route-option-time">預計 {route.duration} 分鐘</span>
+                          </div>
+                          <div className="route-option-details">
+                            距離: {route.distance} km
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <Divider />
+                  
                   <div className="route-info">
                     <div className="info-item">
                       <span className="label">距離：</span>
@@ -346,16 +426,8 @@ const Map: React.FC = () => {
               )}
             </Card>
           )}
-
-          {/* 當前座標信息 */}
-          {/* 已移除標記功能 */}
-
-          {/* 標記列表 */}
-          {/* 已移除標記功能 */}
         </Col>
       </Row>
-
-
     </div>
   );
 };
