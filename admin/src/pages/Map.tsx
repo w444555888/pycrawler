@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import { Button, Space, Modal, message, Row, Col, Card, Select, Divider } from 'antd';
@@ -45,43 +45,45 @@ interface RoutingProps {
 
 // 路由顯示組件：在地圖上繪製從 start 到 end 的路線，並傳回路線信息（距離、時間等）
 const RoutingComponent: React.FC<RoutingProps> = ({ start, end, onRouteFound, selectedRouteIndex = 0 }) => {
-  // 從 react-leaflet 獲取當前地圖實例（MapContainer 會自動提供）
+  //  從 react-leaflet 獲取當前地圖實例（MapContainer 會自動提供）
   const map = useMap();
-  // Ref 用來存儲 Leaflet 的路由控制對象，避免組件重新渲染時重複創建
-  const routingControlRef = React.useRef<any>(null);
-  // Ref 用來存儲最新的 onRouteFound 回調函數
-  const onRouteFoundRef = React.useRef(onRouteFound);
-  // Ref 用來存儲路由計算完成事件的處理函數
-  const handleRouteFoundRef = React.useRef<any>(null);
-  // Ref 用來存儲所有路線
-  const allRoutesRef = React.useRef<any[]>([]);
+  //  存整個導航系統（L.Routing.control），避免組件重新渲染時重複創建
+  const routingControlRef = useRef<any>(null);
+  //  onRouteFound  存callback回調函數
+  const onRouteFoundRef = useRef(onRouteFound);
+  //  存event function
+  const handleRouteFoundRef = useRef<any>(null);
+  //  存所有路線（替代路線）
+  const allRoutesRef = useRef<any[]>([]);
 
-  // 同步回調到 ref
-  React.useEffect(() => {
+  // 同步callback回調函數到 onRouteFound
+  useEffect(() => {
     onRouteFoundRef.current = onRouteFound;
   }, [onRouteFound]);
 
-  // 第二個 useEffect：負責地圖路由的主要邏輯
+  // 負責地圖路由的主要邏輯
   useEffect(() => {
+    // 沒資料不能畫地圖
     if (!map || !start || !end) {
       if (routingControlRef.current) {
+        // 刪掉整個導航系統
         map.removeControl(routingControlRef.current);     
         routingControlRef.current = null;                
       }
       return;                                  
     }
 
-    // 當起點或終點改變時，需要先移除之前的路由，再創建新的
+    // 有舊路線 → 更新路線
     if (routingControlRef.current) {
-      // 移除之前的事件監聽器
       if (handleRouteFoundRef.current) {
+        // 防止重複觸發
         routingControlRef.current.off('routesfound', handleRouteFoundRef.current);
       }
-      // 從地圖移除舊的路由控制對象（包括路線視覺效果）
+      // 刪地圖舊路線
       map.removeControl(routingControlRef.current);
     }
 
-    // 使用 Leaflet Routing Machine 插件
+    // 建立新路線
     routingControlRef.current = L.Routing.control({
       // 設定路由的起點和終點
       waypoints: [
@@ -327,7 +329,7 @@ const Map: React.FC = () => {
                   <Divider />
                   
                   {/* 替代路線選擇 */}
-                  {allRoutes.length > 1 && (
+                  {allRoutes.length > 0 && (
                     <div className="alternative-routes">
                       <p className="alternative-routes-title">
                         選擇路線 ({allRoutes.length} 條可用)
