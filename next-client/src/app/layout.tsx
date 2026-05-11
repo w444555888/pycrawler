@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Providers } from "./providers";
 import { AppInitializer } from "@/components/AppInitializer";
-import "./globals.css";
+import "@/app.scss";
 
 export const metadata: Metadata = {
   title: "Travel App",

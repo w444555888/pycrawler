@@ -22,17 +22,16 @@ import {
 } from "react-icons/md"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import React, { useRef, useState, useEffect } from "react"
-import Footer from '@/components/Footer"
-import Navbar from '@/components/Navbar"
+import Footer from '@/components/Footer'
+import Navbar from '@/components/Navbar'
 import { request } from '@/utils/api/client'
 import { gsap } from "gsap"
 import { toast } from "react-toastify"
 import "./hotel.scss"
 import {
-  useLocation,
+  useRouter,
   useParams,
   useSearchParams,
-  useNavigate,
 } from 'next/navigation'
 import { DateRange } from "react-date-range"
 import { subDays, differenceInDays, eachDayOfInterval, format, parseISO } from "date-fns"
@@ -43,15 +42,15 @@ import {
   setAvailableRooms,
   clearHotelData,
   clearError,
-} from '@/redux/hotelStore"
-import { setDraftHotelOrder } from '@/redux/orderStore"
-import EmptyState from "../subcomponents/EmptyState"
-import LeafletMapPicker from '@/utils/LeafletMapPicker"
+} from '@/redux/slices/hotelSlice'
+import { setDraftHotelOrder } from '@/redux/slices/orderSlice'
+import EmptyState from '../subcomponents/EmptyState'
+import LeafletMapPicker from '@/utils/LeafletMapPicker'
 
 
 const Hotel = () => {
   const navigate = useRouter()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const searchParams = useSearchParams()
   const dispatch = useDispatch()
   const { currentHotel, availableRooms, loading, error } = useSelector(
     (state) => state.hotel

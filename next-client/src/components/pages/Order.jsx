@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useRouter } from 'next/navigation'  
-import { restoreDraftOrders, clearDraftHotelOrder } from '@/redux/orderStore' 
+import { restoreDraftOrders, clearDraftHotelOrder } from '@/redux/slices/orderSlice' 
 import Navbar from '@/components/Navbar'
 import { format } from "date-fns"
 import "./order.scss"

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHotel, faClock, faCalendarAlt } from "@fortawesome/free-solid-svg-icons";
-import DateRangePicker from '@/components/DateRangePicker";
+import DateRangePicker from '@/components/DateRangePicker';
 import { useParams } from 'next/navigation'
 import { useSelector } from 'react-redux'
 import { request } from '@/utils/api/service';

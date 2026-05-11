@@ -6,7 +6,7 @@ import { DateRange, Calendar } from 'react-date-range'
 import Navbar from '@/components/Navbar'
 import { format, parse, addMinutes } from 'date-fns'
 import zhTW from 'date-fns/locale/zh-TW'
-import { useNavigate, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { debounce } from 'lodash'
 import { request } from '@/utils/api/client';
 import dayjs from '@/utils/dayjs-config';
@@ -26,13 +26,13 @@ import {
   resetFlightStore,
   setShowDepartureSuggestions,
   setShowArrivalSuggestions
-} from '@/redux/flightStore'
+} from '@/redux/slices/flightSlice'
 
 
 const Flight = () => {
     const navigate = useRouter()
     const dispatch = useDispatch()
-    const [searchParams, setSearchParams] = useSearchParams();
+    const searchParams = useSearchParams();
  
     // Redux
     const { 

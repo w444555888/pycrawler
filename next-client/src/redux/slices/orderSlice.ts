@@ -1,8 +1,15 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import apiClient from "@/utils/api/client";
+
+interface DraftOrder {
+  [key: string]: any;
+}
 
 interface OrderState {
   orders: any[];
   currentOrder: any | null;
+  draftHotelOrder: DraftOrder | null;
+  draftOrders: DraftOrder[];
   loading: boolean;
   error: string | null;
 }
@@ -10,9 +17,24 @@ interface OrderState {
 const initialState: OrderState = {
   orders: [],
   currentOrder: null,
+  draftHotelOrder: null,
+  draftOrders: [],
   loading: false,
   error: null,
 };
+
+// 异步 thunk
+export const fetchUserOrders = createAsyncThunk(
+  "order/fetchUserOrders",
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const response = await apiClient.get(`/order/user/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch orders");
+    }
+  }
+);
 
 export const orderSlice = createSlice({
   name: "order",
@@ -37,6 +59,33 @@ export const orderSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+    setDraftHotelOrder: (state, action: PayloadAction<DraftOrder | null>) => {
+      state.draftHotelOrder = action.payload;
+    },
+    clearDraftHotelOrder: (state) => {
+      state.draftHotelOrder = null;
+    },
+    restoreDraftOrders: (state, action: PayloadAction<DraftOrder[]>) => {
+      state.draftOrders = action.payload;
+    },
+    clearDraftOrders: (state) => {
+      state.draftOrders = [];
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUserOrders.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchUserOrders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.orders = action.payload;
+      })
+      .addCase(fetchUserOrders.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
   },
 });
 
@@ -47,5 +96,9 @@ export const {
   clearOrders,
   setLoading,
   setError,
+  setDraftHotelOrder,
+  clearDraftHotelOrder,
+  restoreDraftOrders,
+  clearDraftOrders,
 } = orderSlice.actions;
 export default orderSlice.reducer;

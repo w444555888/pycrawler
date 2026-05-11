@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSelector, useDispatch } from 'react-redux'  
-import { restoreSelectedFlight } from '@/redux/flightStore'
+import { restoreSelectedFlight } from '@/redux/slices/flightSlice'
 import Navbar from '@/components/Navbar'
 import './bookingFlight.scss'
 import { request } from '@/utils/api/service'
@@ -131,7 +131,7 @@ const BookingFlight = () => {
                 }
                 console.warn('无法恢复航班信息，重定向到航班搜索页');
                 toast.error('航班信息已过期，请重新选择航班');
-                navigate.push('/flight');
+                navigate.push('/flights');
             }, 100);
             
             return () => clearTimeout(timer);

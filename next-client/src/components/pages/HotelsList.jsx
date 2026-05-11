@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar'
 import "./hotelsList.scss"
 import { DateRange } from 'react-date-range'
 import { format } from 'date-fns'
-import { useLocation, useNavigate, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import ConditionSelector from '@/components/ConditionSelector'
 import DateRangePicker from '@/components/DateRangePicker'
 import { request } from '@/utils/api/service'
@@ -13,7 +13,8 @@ import Skeleton from 'react-loading-skeleton'
 import { toast } from 'react-toastify'
 const HotelsList = () => {
     
-    const [searchParams, setSearchParams] = useSearchParams()
+    const navigate = useRouter()
+    const searchParams = useSearchParams()
     const [name, setName] = useState('')
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
