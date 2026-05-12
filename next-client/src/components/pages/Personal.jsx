@@ -19,8 +19,8 @@ const formReducer = (state, action) => {
     case 'INIT_FORM':
       return {
         ...state,
-        real_name: action.payload.real_name || '',
-        phone_number: action.payload.phone_number || '',
+        real_name: action.payload.real_name || action.payload.realName || '',
+        phone_number: action.payload.phone_number || action.payload.phoneNumber || '',
         address: action.payload.address || '',
         username: action.payload.username || '',
         email: action.payload.email || ''
@@ -77,13 +77,13 @@ const Personal = () => {
     
     const result = await request('PUT', `/users/${userInfo.id}`, { 
       password: password, 
-      real_name: formData.real_name, 
-      phone_number: formData.phone_number, 
+      realName: formData.real_name,
+      phoneNumber: formData.phone_number,
       address: formData.address 
     }, setLoading)
     if (result.success) {
-      const data = result.data;
-      dispatch(setUserInfo(data));
+      const userData = result.data?.user || result.data;
+      dispatch(setUserInfo(userData));
       toast.success('編輯帳戶成功！');
     } else toast.error(`${result.message}`)
   }

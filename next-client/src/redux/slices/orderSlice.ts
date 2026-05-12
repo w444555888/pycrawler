@@ -7,6 +7,8 @@ interface DraftOrder {
 
 interface OrderState {
   orders: any[];
+  flightOrders: any[];
+  flashSaleOrders: any[];
   currentOrder: any | null;
   draftHotelOrder: DraftOrder | null;
   draftOrders: DraftOrder[];
@@ -16,6 +18,8 @@ interface OrderState {
 
 const initialState: OrderState = {
   orders: [],
+  flightOrders: [],
+  flashSaleOrders: [],
   currentOrder: null,
   draftHotelOrder: null,
   draftOrders: [],
@@ -28,7 +32,7 @@ export const fetchUserOrders = createAsyncThunk(
   "order/fetchUserOrders",
   async (userId: string, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get(`/order/user/${userId}`);
+      const response = await apiClient.get(`/users/${userId}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || "Failed to fetch orders");
@@ -51,6 +55,8 @@ export const orderSlice = createSlice({
     },
     clearOrders: (state) => {
       state.orders = [];
+      state.flightOrders = [];
+      state.flashSaleOrders = [];
       state.currentOrder = null;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -80,7 +86,10 @@ export const orderSlice = createSlice({
       })
       .addCase(fetchUserOrders.fulfilled, (state, action) => {
         state.loading = false;
-        state.orders = action.payload;
+        const data = action.payload?.data || {};
+        state.orders = data.allOrder || [];
+        state.flightOrders = data.allFlightOrder || [];
+        state.flashSaleOrders = data.allFlashSaleOrder || [];
       })
       .addCase(fetchUserOrders.rejected, (state, action) => {
         state.loading = false;

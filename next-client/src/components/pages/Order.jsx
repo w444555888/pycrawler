@@ -244,12 +244,12 @@ const Order = () => {
                         <span className="label">姓名：</span>
                         <span>{userInfo?.realName ?? userInfo?.real_name ?? ''}</span>
                       </div>
-                      <div class="info-item">
-                        <span class="label">帐号：</span>
+                      <div className="info-item">
+                        <span className="label">帳號：</span>
                         <span>{userInfo?.username ?? ''}</span>
                       </div>
-                      <div class="info-item">
-                        <span class="label">电话：</span>
+                      <div className="info-item">
+                        <span className="label">電話：</span>
                         <span>{userInfo?.phoneNumber ?? userInfo?.phone_number ?? ''}</span>
                       </div>
                       <div className="info-item">
@@ -295,9 +295,9 @@ const Order = () => {
                 <div className="price-title">房價明細</div>
                 <div className="total-price">
                   <div className="booking-policies">
-                    {roomData.paymentOptions.map(policy => (
+                    {roomData.paymentOptions.map((policy, idx) => (
                       <div
-                        key={policy.id}
+                        key={policy.type || idx}
                         className={`policy-item ${selectedPaymentType === policy.type ? 'selected' : ''}`}
                         onClick={() => setSelectedPaymentType(policy.type)}
                       >

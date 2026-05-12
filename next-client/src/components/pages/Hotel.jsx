@@ -210,7 +210,7 @@ const Hotel = () => {
       createdAt: new Date().toISOString()
     };
     dispatch(setDraftHotelOrder(draftOrder));
-    navigate.push('/order');
+    navigate.push('/orders');
   }
 
   const facilitiesList = [
