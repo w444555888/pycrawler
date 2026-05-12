@@ -84,7 +84,20 @@ const Hotel = () => {
   useEffect(() => {
     const handleFetchHotel = async () => {
       try {
-        const result = await dispatch(fetchSingleHotel(searchParams))
+        const hotelId = searchParams.get("hotelId")
+        const startDateParam = searchParams.get("startDate")
+        const endDateParam = searchParams.get("endDate")
+        
+        if (!hotelId) {
+          toast.error('缺少酒店Id，無法獲取酒店資料')
+          return
+        }
+        
+        const result = await dispatch(fetchSingleHotel({
+          hotelId,
+          startDate: startDateParam || format(new Date(), 'yyyy-MM-dd'),
+          endDate: endDateParam || format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')
+        }))
         if (fetchSingleHotel.fulfilled.match(result)) {
           toast.success('成功獲取飯店資料')
         }
@@ -134,11 +147,11 @@ const Hotel = () => {
   }
 
   const handleSearchHotels = () => {
-    const params = {}
-    if (hotelId) params.hotelId = hotelId
-    if (startDate) params.startDate = startDate
-    if (endDate) params.endDate = endDate
-    setSearchParams(params)
+    const params = new URLSearchParams()
+    if (hotelId) params.append('hotelId', hotelId)
+    if (startDate) params.append('startDate', startDate)
+    if (endDate) params.append('endDate', endDate)
+    navigate.push(`/hotels?${params.toString()}`)
   }
 
   const handleHover = () => {
@@ -168,7 +181,7 @@ const Hotel = () => {
 
   const slideDirection = (direction) => {
     let newSliderIndex
-    let lastPicutre = currentHotel.photos.length - 1
+    let lastPicutre = (currentHotel?.photos?.length || 0) - 1
     if (direction === "left") {
       sliderIndex === 0
         ? (newSliderIndex = lastPicutre)
@@ -282,7 +295,7 @@ const Hotel = () => {
                 className="arrow"
                 onClick={() => slideDirection("left")}
               />
-              <img src={currentHotel.photos[sliderIndex]} />
+              <img src={currentHotel?.photos?.[sliderIndex]} />
               <FontAwesomeIcon
                 icon={faAngleRight}
                 className="arrow"
@@ -332,7 +345,7 @@ const Hotel = () => {
               </div>
             </div>
             <div className="hotelImg">
-              {currentHotel.photos.map((e, index) => (
+              {currentHotel?.photos?.map((e, index) => (
                 <div
                   key={index}
                   className="Imgwrap"
@@ -352,7 +365,7 @@ const Hotel = () => {
               <p className="textIcon">
                 {facilitiesList.map(
                   (facility) =>
-                    currentHotel.facilities[facility.key] && (
+                    currentHotel?.facilities?.[facility.key] && (
                       <React.Fragment key={facility.key}>
                         <FontAwesomeIcon
                           icon={facility.icon}
@@ -403,7 +416,7 @@ const Hotel = () => {
                       lng: currentHotel?.coordinates?.longitude || 103.984,
                     }}
                     onChange={({ lat, lng }) => {
-                      console.log("使用者選擇的座標:", lat, lng)
+                      // console.log("使用者選擇的座標:", lat, lng)
                     }}
                   />
                 </div>

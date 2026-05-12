@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Providers } from "./providers";
 import { AppInitializer } from "@/components/AppInitializer";
 import "@/app.scss";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 export const metadata: Metadata = {
   title: "Travel App",

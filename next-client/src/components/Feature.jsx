@@ -1,35 +1,52 @@
 
-'use client'
+/**
+ * Feature 组件 - 服务器组件
+ * 
+ * 在服务器端执行：
+ *   - 可以直接访问数据库
+ *   - 可以调用服务器间 API（快速）
+ *   - 无法使用 React hooks (useState, useEffect)
+ *   - 无法处理用户交互 (onClick 等)
+ * 
+ * 在浏览器端执行：
+ *   - 接收来自服务器的数据（通过 props）
+ *   - 处理用户交互
+ *   - Categories 和 PopularHotels 是客户端组件
+ */
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import Categories from '@/components/subcomponents/Categories'
 import PopularHotels from '@/components/subcomponents/PopularHotels'
-import { request } from '@/utils/api/service'
-import { toast } from 'react-toastify' 
+import { serverRequest } from '@/utils/api/server'
 import "./feature.scss"
-const Feature = () => {
-    const [hotels, setHotels] = useState([])
-    const [popularHotels, setPopularHotels] = useState([])
 
-    useEffect(() => {
-        const fetchHotels = async () => {
-            const result = await request('GET', '/hotels', {});
-            if (result.success) {
-                setHotels(result.data);
-            }else toast.error(`${result.message}`)
-        };
+/**
+ * 异步服务器组件
+ * 在服务器端执行，获取数据后渲染
+ */
+export default async function Feature() {
+    // 在服务器端执行
+    // 这里可以直接使用 async/await，不需要 useEffect
+    
+    let hotels = []
+    let popularHotels = []
 
-        const fetchPopularHotels = async () => {
-            const result = await request('GET', '/hotels/popular', {});
-            if (result.success) {
-                setPopularHotels(result.data);
-            }else toast.error(`${result.message}`)
-        };
+    try {
+        // 获取所有酒店（用于分类）
+        const hotelsResult = await serverRequest('GET', '/hotels', {})
+        if (hotelsResult.success && hotelsResult.data) {
+            hotels = hotelsResult.data
+        }
 
-        fetchHotels();
-        fetchPopularHotels();
-    }, []);
-
+        // 获取热门酒店
+        const popularResult = await serverRequest('GET', '/hotels/popular', {})
+        if (popularResult.success && popularResult.data) {
+            popularHotels = popularResult.data
+        }
+    } catch (error) {
+        console.error('Feature: Failed to fetch data', error)
+        // 即使出错也继续渲染，只是显示空数据
+    }
 
     return (
         <div className='feature'>
@@ -51,5 +68,3 @@ const Feature = () => {
         </div>
     )
 }
-
-export default Feature

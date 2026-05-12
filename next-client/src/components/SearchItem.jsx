@@ -11,9 +11,7 @@ const SearchItem =  React.memo(({ hotel }) => {
 
 
   const handleHotelDetail = () => {
-    navigate.push(`/hotels${searchParams.toString()}&hotelId=${hotel.id}`, {
-      state: { hotel },
-    });
+    navigate.push(`/hotels?${searchParams.toString()}&hotelId=${hotel.id}`)
   };
 
   //SearchItem的active狀態

@@ -17,10 +17,19 @@ const initialState: HotelState = {
 
 export const fetchSingleHotel = createAsyncThunk(
   "hotel/fetchSingleHotel",
-  async (searchParams: URLSearchParams, { rejectWithValue }) => {
+  async (params: { hotelId: string; startDate?: string; endDate?: string }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get(`/hotels/search?${searchParams.toString()}`);
-      return response.data?.data?.[0] || rejectWithValue("Hotel not found");
+      const { hotelId, startDate, endDate } = params;
+      const queryParams = new URLSearchParams({ hotelId });
+      if (startDate) queryParams.append('startDate', startDate);
+      if (endDate) queryParams.append('endDate', endDate);
+      
+      const response = await apiClient.get(`/hotels/search?${queryParams.toString()}`);
+      console.log('[API] Full URL:', `/hotels/search?${queryParams.toString()}`)
+      if (response.data?.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+        return response.data.data[0]; 
+      }
+      return rejectWithValue("Hotel not found");
     } catch (error: any) {
       return rejectWithValue(error.message || "Network error");
     }
@@ -55,6 +64,7 @@ export const hotelSlice = createSlice({
       .addCase(fetchSingleHotel.fulfilled, (state, action) => {
         state.loading = false;
         state.currentHotel = action.payload;
+        state.availableRooms = action.payload?.availableRooms || [];
       })
       .addCase(fetchSingleHotel.rejected, (state, action) => {
         state.loading = false;

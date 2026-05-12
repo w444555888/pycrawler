@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState, useEffect } from 'react'
 import SearchItem from '@/components/SearchItem'
 import Navbar from '@/components/Navbar'

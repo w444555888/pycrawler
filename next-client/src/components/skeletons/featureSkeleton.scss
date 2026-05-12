@@ -1,0 +1,99 @@
+/**
+ * 加载骨架样式 - 完全匹配 feature.scss + categories.scss 的样式
+ * 
+ * 效果：
+ * - 卡片宽度 200px（与 Categories.jsx 相同）
+ * - 水平滚动布局（与 feature.scss 相同）
+ * - 1.5秒闪烁动画
+ */
+
+@keyframes skeleton-loading {
+  0% {
+    background-color: #e8e8e8;
+  }
+  50% {
+    background-color: #f5f5f5;
+  }
+  100% {
+    background-color: #e8e8e8;
+  }
+}
+
+.skeleton-text {
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+  border-radius: 2px;
+  background-color: #e8e8e8;
+  display: inline-block;
+}
+
+.skeleton-text-title {
+  display: block;
+  width: 150px;
+  height: 18px;
+
+  &.skeleton-text-title-large {
+    width: 200px;
+  }
+}
+
+.skeleton-image {
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+  border-radius: 2px;
+  background-color: #e8e8e8;
+  width: 100%;
+  height: 150px;
+  display: block;
+}
+
+
+.skeleton-item {
+  width: 200px;
+  cursor: not-allowed;
+  flex: 0 0 auto;
+
+  .skeleton-image {
+    border-radius: 2px;
+    object-fit: cover;
+  }
+
+  .skeleton-text {
+    display: block;
+    margin-top: 5px;
+  }
+
+  .skeleton-item-text-1 {
+    height: 16px;
+    width: 100%;
+  }
+
+  .skeleton-item-text-2 {
+    height: 14px;
+    width: 70%;
+    margin-top: 4px;
+  }
+
+  .skeleton-item-text-3 {
+    height: 14px;
+    width: 50%;
+    margin-top: 4px;
+  }
+}
+
+
+.listTitle-second {
+  margin-top: 40px;
+}
+
+
+@media screen and (max-width: 768px) {
+  .skeleton-item {
+    width: 45%;
+    margin-bottom: 10px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .skeleton-item {
+    width: 100%;
+  }
+}

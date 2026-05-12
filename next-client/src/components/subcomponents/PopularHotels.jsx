@@ -1,8 +1,17 @@
 
+'use client'
+
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import "./popularHotels.scss"
-const PopularHotels = ({ dataArray }) => {
+
+/**
+ * PopularHotels 组件 - 客户端组件
+ * 作用：展示热门酒店卡片，处理导航点击
+ * 
+ * Props: dataArray - 酒店数组（来自服务器父组件）
+ */
+const PopularHotels = ({ dataArray = [] }) => {
 
     const navigate = useRouter()
 

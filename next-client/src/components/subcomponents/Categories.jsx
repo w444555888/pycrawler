@@ -1,8 +1,17 @@
 
+'use client'
+
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import "./categories.scss"
-const Categories = ({ dataArray }) => {
+
+/**
+ * Categories 组件 - 客户端组件
+ * 作用：展示酒店分类卡片，处理导航点击
+ * 
+ * Props: dataArray - 酒店数组（来自服务器父组件）
+ */
+const Categories = ({ dataArray = [] }) => {
 
   const navigate = useRouter()
 
